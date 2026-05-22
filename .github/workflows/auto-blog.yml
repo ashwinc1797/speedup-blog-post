@@ -2,14 +2,14 @@ name: Auto Blog Publisher
 
 on:
   schedule:
-    - cron: "30 0 * * 1,3,5"   # Mon, Wed, Fri — 6:00 AM IST
+    - cron: "30 0 * * 1,3,5"   # Mon, Wed, Fri 6:00 AM IST
   workflow_dispatch:             # Manual trigger from GitHub UI
 
 jobs:
   publish:
-    name: Generate & Publish Blog Post
+    name: Research Keywords & Publish Post
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: write
 
@@ -20,7 +20,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -31,24 +31,20 @@ jobs:
 
       - name: Run automation
         env:
-          GEMINI_API_KEY:      ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY:        ${{ secrets.GROQ_API_KEY }}
+          PEXELS_API_KEY:      ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           INDEXNOW_KEY:        ${{ secrets.INDEXNOW_KEY }}
-          VERCEL_DEPLOY_HOOK:  ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: node scripts/automate.js
 
-      - name: Push content
+      - name: Push content to GitHub
         run: |
           git config user.name  "SpeedUp Blog Bot"
           git config user.email "bot@speedupinfotech.com"
-          git add content/blog/ public/sitemap.xml scripts/.state.json || true
+          git add content/blog/ public/sitemap.xml scripts/.state.json scripts/social-queue/ || true
           if git diff --cached --quiet; then
             echo "No new content to commit"
           else
-            git commit -m "Auto-publish [$(date +'%Y-%m-%d')]"
-            git push origin main
+            git commit -m "Auto-publish blog [$(date +'%Y-%m-%d')]"
+            git push origin master
           fi
-
-      - name: Trigger Vercel deploy
-        if: ${{ secrets.VERCEL_DEPLOY_HOOK != '' }}
-        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}" || true
