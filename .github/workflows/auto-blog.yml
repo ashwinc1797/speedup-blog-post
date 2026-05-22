@@ -1,0 +1,54 @@
+name: Auto Blog Publisher
+
+on:
+  schedule:
+    - cron: "30 0 * * 1,3,5"   # Mon, Wed, Fri — 6:00 AM IST
+  workflow_dispatch:             # Manual trigger from GitHub UI
+
+jobs:
+  publish:
+    name: Generate & Publish Blog Post
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run automation
+        env:
+          GEMINI_API_KEY:      ${{ secrets.GEMINI_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          INDEXNOW_KEY:        ${{ secrets.INDEXNOW_KEY }}
+          VERCEL_DEPLOY_HOOK:  ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: node scripts/automate.js
+
+      - name: Push content
+        run: |
+          git config user.name  "SpeedUp Blog Bot"
+          git config user.email "bot@speedupinfotech.com"
+          git add content/blog/ public/sitemap.xml scripts/.state.json || true
+          if git diff --cached --quiet; then
+            echo "No new content to commit"
+          else
+            git commit -m "Auto-publish [$(date +'%Y-%m-%d')]"
+            git push origin main
+          fi
+
+      - name: Trigger Vercel deploy
+        if: ${{ secrets.VERCEL_DEPLOY_HOOK != '' }}
+        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}" || true

@@ -1,0 +1,25 @@
+{
+  "name": "speedup-blog-test",
+  "version": "1.0.0",
+  "description": "SpeedUp Infotech — Blog Automation Test Site",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "blog:generate": "node scripts/automate.js",
+    "blog:keywords": "node scripts/keywords.js",
+    "blog:test": "node scripts/test-run.js"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "gray-matter": "4.0.3",
+    "next-mdx-remote": "5.0.0",
+    "remark-gfm": "4.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
