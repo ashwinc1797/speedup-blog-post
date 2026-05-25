@@ -435,17 +435,12 @@ function updateSitemap(slug) {
 
 // ── STEP 8: GIT PUSH ─────────────────────────────────────────
 function gitPush(slug, filename) {
-  console.log('\n🚀 Step 6: Pushing to GitHub...')
-  try {
-    execSync('git config user.email "bot@speedupinfotech.com"', { stdio: 'pipe' })
-    execSync('git config user.name "SpeedUp Blog Bot"', { stdio: 'pipe' })
-    execSync(`git add content/blog/${filename} public/sitemap.xml scripts/.state.json || true`, { stdio: 'pipe' })
-    execSync(`git commit -m "Auto-publish: ${slug} [${new Date().toISOString().split('T')[0]}]"`, { stdio: 'pipe' })
-    execSync('git push origin main', { stdio: 'pipe' })
-    console.log('   ✓ Pushed — Vercel redeploys in ~60 seconds')
-  } catch {
-    console.log('   ℹ️  Git push skipped (GitHub Actions handles this)')
-  }
+  // NOTE: Git push is handled by the GitHub Actions workflow step.
+  // Do NOT commit here — if we commit inside the script, the workflow's
+  // "Push content to GitHub" step finds nothing to commit and skips the push,
+  // meaning .state.json is never saved back to the repo.
+  console.log('\n🚀 Step 6: Git push will be handled by GitHub Actions workflow')
+  console.log(`   ✓ File ready: content/blog/${filename}`)
 }
 
 // ── STEP 9: PING SEARCH ENGINES ──────────────────────────────
