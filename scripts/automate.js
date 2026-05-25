@@ -641,7 +641,7 @@ async function main() {
   console.log(`🔑 Keyword:  ${topic.keyword}`)
   console.log(`📸 Images:   Hero + 3 body (Pexels/Unsplash)`)
   console.log(`📊 Total:    ${state.total} posts published`)
-  console.log(`⏰ Next run: Mon/Wed/Fri 6:00 AM IST (automatic)`)
+  console.log(`⏰ Next run: Mon/Tue/Thu/Sat 6:00 AM IST (automatic — 4x/week)`)
   console.log('══════════════════════════════════════════════════════\n')
 }
 
