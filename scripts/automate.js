@@ -21,17 +21,23 @@ const PHONE = '+91-8904581086'
 const ADDR  = 'Shivaji Nagar, near FC Road, Pune'
 
 // ── GROQ ──────────────────────────────────────────────────────
-async function groq(system, user, model = 'llama-3.1-8b-instant', retries = 3) {
+// Model strategy:
+//   8B  (llama-3.1-8b-instant)      → keyword research  (fast, cheap, just JSON output)
+//   70B (llama-3.3-70b-versatile)   → blog writing      (premium quality content)
+const MODEL_RESEARCH = 'llama-3.1-8b-instant'
+const MODEL_WRITE    = 'llama-3.3-70b-versatile'
+
+async function groq(system, user, model = MODEL_WRITE, retries = 3, maxTokens = 1800) {
   const key = process.env.GROQ_API_KEY
   if (!key) throw new Error('GROQ_API_KEY not set in GitHub Secrets')
 
   for (let attempt = 1; attempt <= retries; attempt++) {
-    const res = await fetch('https://api.groqcloud.com/openai/v1/chat/completions'.replace('groqcloud','groq'), {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
       body: JSON.stringify({
         model,
-        max_tokens:  2000,
+        max_tokens:  maxTokens,
         temperature: 0.75,
         messages: [
           { role: 'system', content: system },
@@ -89,7 +95,6 @@ async function researchKeywords(state) {
 
   const text = await groq(
     `You are an expert SEO strategist and tech industry analyst. You understand the Indian IT job market deeply, especially Pune. You track AI/tech trends and know what developers and students search for.`,
-
     `Generate 15 high-value blog topic ideas for SpeedUp Infotech, an IT training institute in Pune.
 
 Current month: ${today}
@@ -137,7 +142,10 @@ Return ONLY valid JSON array of 15 objects:
   }
 ]
 
-Make titles specific and clickable. Include year 2026. Prioritize trending AI topics.`
+Make titles specific and clickable. Include year 2026. Prioritize trending AI topics.`,
+    MODEL_RESEARCH,   // 8B model — keyword research only needs JSON, not creative writing
+    3,
+    1200              // Enough tokens for full 15-item JSON list
   )
 
   try {
@@ -274,27 +282,28 @@ async function getImages(topic, state) {
   const fbUrl = FALLBACK_POOL[idx % FALLBACK_POOL.length]
 
   // Build category-specific, varied queries for each image slot
+  // Use imageQuery as the base for hero only — avoid repeating it in suffix
   const categoryQueries = {
     'trending-ai': [
-      `${q} artificial intelligence`,
+      q,                                          // hero: exact topic query from Groq
       'developer working laptop screen code',
       'machine learning data visualization',
       'students learning technology classroom'
     ],
     'career': [
-      `${q} professional office`,
+      `${q} professional`,
       'software developer job interview',
       'IT professional working computer',
       'students coding bootcamp training'
     ],
     'comparison': [
-      `${q} technology comparison`,
+      `${q} technology`,
       'programmer dual screen setup',
       'coding languages framework development',
       'IT students group project laptop'
     ],
     'beginner': [
-      `${q} learning tutorial`,
+      `${q} learning`,
       'beginner programmer laptop study',
       'online learning education technology',
       'student studying programming course'
@@ -332,8 +341,8 @@ async function writePost(topic, images) {
 
   const system = `You are an expert SEO content writer and tech journalist for SpeedUp Infotech, a top IT training institute in Pune at Jangali Maharaj Road, ${ADDR}. You write detailed, educational blog content that ranks on Google and gets cited by AI tools like ChatGPT and Perplexity. You explain technical concepts clearly with real examples. Always connect tech topics to career opportunities and salary in Pune.`
 
-  // CALL 1 — First 1000 words
-  console.log('   Writing Part 1 (~1000 words)...')
+  // CALL 1 — First 1000 words (70B model for premium quality)
+  console.log(`   Writing Part 1 (~1000 words) with ${MODEL_WRITE}...`)
   const part1 = await groq(system,
     `Write the FIRST HALF of a detailed SEO blog post.
 
@@ -366,12 +375,13 @@ CRITICAL RULES:
 - Do NOT write a conclusion
 - Do NOT include FAQ yet
 - Do NOT include image tags
-- Start directly with # ${topic.title}`)
+- Start directly with # ${topic.title}`,
+    MODEL_WRITE, 3, 1800)  // 70B model, 1800 tokens max per part
 
   console.log(`   ✓ Part 1: ~${part1.split(/\s+/).length} words`)
 
-  // CALL 2 — Second 1000 words
-  console.log('   Writing Part 2 (~1000 words)...')
+  // CALL 2 — Second 1000 words (70B model for premium quality)
+  console.log(`   Writing Part 2 (~1000 words) with ${MODEL_WRITE}...`)
   const part2 = await groq(system,
     `Write the SECOND HALF of a blog post about "${topic.title}" for SpeedUp Infotech.
 
@@ -423,7 +433,8 @@ CRITICAL RULES:
 - NO bullet points — flowing paragraphs only
 - Do NOT repeat H1 title
 - Do NOT include image tags
-- Do NOT use --- frontmatter`)
+- Do NOT use --- frontmatter`,
+    MODEL_WRITE, 3, 1800)  // 70B model, 1800 tokens max per part
 
   console.log(`   ✓ Part 2: ~${part2.split(/\s+/).length} words`)
 
