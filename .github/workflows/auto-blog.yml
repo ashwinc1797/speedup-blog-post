@@ -30,12 +30,19 @@ jobs:
         run: npm ci
 
       - name: Run automation
+        id: blog
         env:
           GROQ_API_KEY:        ${{ secrets.GROQ_API_KEY }}
           PEXELS_API_KEY:      ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           INDEXNOW_KEY:        ${{ secrets.INDEXNOW_KEY }}
-        run: node scripts/automate.js
+        run: |
+          node scripts/automate.js 2>&1 | tee output.log
+          # Extract post title and slug from log
+          TITLE=$(grep "Selected:" output.log | sed 's/.*Selected: "//' | sed 's/".*//' || echo "New Blog Post")
+          SLUG=$(grep "content/blog/" output.log | head -1 | sed 's/.*content\/blog\///' | sed 's/\.mdx.*//' || echo "")
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "slug=$SLUG" >> $GITHUB_OUTPUT
 
       - name: Push content to GitHub
         run: |
@@ -47,4 +54,83 @@ jobs:
           else
             git commit -m "Auto-publish blog [$(date +'%Y-%m-%d')]"
             git push origin master
+            echo "PUSHED=true" >> $GITHUB_ENV
           fi
+
+      - name: Send email notification
+        if: env.PUSHED == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.NOTIFY_EMAIL }}
+          password: ${{ secrets.NOTIFY_EMAIL_PASSWORD }}
+          subject: "✅ New Blog Published — SpeedUp Infotech"
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          from: SpeedUp Blog Bot
+          html_body: |
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#000;color:#fff;padding:30px;border-radius:8px">
+              <div style="text-align:center;margin-bottom:24px">
+                <h1 style="font-size:28px;font-weight:900;letter-spacing:2px">
+                  <span style="color:#fff">SPEED</span><span style="color:#D92B2B">UP</span>
+                  <span style="font-size:12px;letter-spacing:4px;color:#555"> INFOTECH</span>
+                </h1>
+              </div>
+              <div style="background:#111;border-left:4px solid #D92B2B;padding:20px;margin-bottom:20px">
+                <h2 style="color:#D92B2B;font-size:14px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px">New Blog Post Published</h2>
+                <h3 style="color:#fff;font-size:20px;margin:0">${{ steps.blog.outputs.title }}</h3>
+              </div>
+              <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+                <tr>
+                  <td style="padding:10px;border-bottom:1px solid #222;color:#888;font-size:13px">Published</td>
+                  <td style="padding:10px;border-bottom:1px solid #222;color:#fff;font-size:13px">${{ github.run_started_at }}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px;border-bottom:1px solid #222;color:#888;font-size:13px">Schedule</td>
+                  <td style="padding:10px;border-bottom:1px solid #222;color:#fff;font-size:13px">Mon / Wed / Fri · 6:00 AM IST</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px;border-bottom:1px solid #222;color:#888;font-size:13px">AI Model</td>
+                  <td style="padding:10px;border-bottom:1px solid #222;color:#fff;font-size:13px">Groq Llama 3.3 70B</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px;color:#888;font-size:13px">Cost</td>
+                  <td style="padding:10px;color:#22C55E;font-size:13px;font-weight:bold">₹0</td>
+                </tr>
+              </table>
+              <div style="text-align:center;margin-bottom:20px">
+                <a href="https://speedupinfotech.com/blogs/${{ steps.blog.outputs.slug }}"
+                   style="background:#D92B2B;color:#fff;padding:12px 28px;text-decoration:none;font-weight:bold;font-size:14px;letter-spacing:1px;text-transform:uppercase">
+                  VIEW BLOG POST →
+                </a>
+              </div>
+              <div style="text-align:center;margin-top:20px">
+                <a href="https://github.com/${{ github.repository }}/actions"
+                   style="color:#555;font-size:12px;text-decoration:none">
+                  View GitHub Actions →
+                </a>
+              </div>
+              <p style="color:#333;font-size:11px;text-align:center;margin-top:20px">
+                SpeedUp Infotech · Shivaji Nagar, FC Road, Pune · +91-8904581086
+              </p>
+            </div>
+
+      - name: Notify on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.NOTIFY_EMAIL }}
+          password: ${{ secrets.NOTIFY_EMAIL_PASSWORD }}
+          subject: "❌ Blog Automation Failed — SpeedUp Infotech"
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          from: SpeedUp Blog Bot
+          body: |
+            Blog automation failed on ${{ github.run_started_at }}
+            
+            Check the logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            
+            SpeedUp Infotech Blog Bot
