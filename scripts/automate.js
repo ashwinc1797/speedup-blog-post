@@ -21,29 +21,47 @@ const PHONE = '+91-8904581086'
 const ADDR  = 'Shivaji Nagar, near FC Road, Pune'
 
 // ── GROQ ──────────────────────────────────────────────────────
-async function groq(system, user, model = 'llama-3.3-70b-versatile') {
+async function groq(system, user, model = 'llama-3.1-8b-instant', retries = 3) {
   const key = process.env.GROQ_API_KEY
   if (!key) throw new Error('GROQ_API_KEY not set in GitHub Secrets')
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-    body: JSON.stringify({
-      model,
-      max_tokens:  3000,
-      temperature: 0.75,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user',   content: user },
-      ],
-    }),
-  })
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const res = await fetch('https://api.groqcloud.com/openai/v1/chat/completions'.replace('groqcloud','groq'), {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({
+        model,
+        max_tokens:  2000,
+        temperature: 0.75,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user',   content: user },
+        ],
+      }),
+    })
 
-  if (!res.ok) throw new Error(`Groq ${res.status}: ${await res.text()}`)
-  const data = await res.json()
-  const text = data?.choices?.[0]?.message?.content?.trim()
-  if (!text) throw new Error('Groq returned empty response')
-  return text
+    // Handle rate limit — wait and retry
+    if (res.status === 429) {
+      const errText = await res.text()
+      // Extract wait time from error message e.g. "try again in 7m37.92s"
+      const waitMatch = errText.match(/(\d+)m([\d.]+)s/)
+      const waitMs = waitMatch
+        ? (parseInt(waitMatch[1]) * 60 + parseFloat(waitMatch[2])) * 1000 + 2000
+        : attempt * 30000 // fallback: 30s, 60s, 90s
+      const waitSec = Math.round(waitMs / 1000)
+      console.log(`   ⏳ Rate limit hit. Waiting ${waitSec}s before retry ${attempt}/${retries}...`)
+      await new Promise(r => setTimeout(r, waitMs))
+      continue
+    }
+
+    if (!res.ok) throw new Error(`Groq ${res.status}: ${await res.text()}`)
+    const data = await res.json()
+    const text = data?.choices?.[0]?.message?.content?.trim()
+    if (!text) throw new Error('Groq returned empty response')
+    return text
+  }
+
+  throw new Error('Groq rate limit exceeded after all retries. Try again tomorrow or upgrade to Groq Dev tier.')
 }
 
 // ── STATE ─────────────────────────────────────────────────────

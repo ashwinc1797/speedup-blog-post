@@ -50,13 +50,28 @@ jobs:
           INDEXNOW_KEY:        ${{ secrets.INDEXNOW_KEY }}
         run: |
           set -e
+          # Count existing MDX files BEFORE running
+          MDX_COUNT_BEFORE=$(ls content/blog/*.mdx 2>/dev/null | wc -l || echo 0)
+          echo "📂 MDX files before: $MDX_COUNT_BEFORE"
+
           node scripts/automate.js 2>&1 | tee output.log
-          # Fail if MDX was not generated
-          if ! ls content/blog/*.mdx 1>/dev/null 2>&1; then
-            echo "❌ ERROR: No MDX file was generated! Check the logs above."
+
+          # Check if the script exited with error
+          if grep -q "✗ Fatal:" output.log; then
+            echo "❌ ERROR: Script failed! See error above."
+            cat output.log | grep "✗ Fatal:"
             exit 1
           fi
-          echo "✅ MDX file generated successfully"
+
+          # Check if a NEW MDX file was actually created
+          MDX_COUNT_AFTER=$(ls content/blog/*.mdx 2>/dev/null | wc -l || echo 0)
+          echo "📂 MDX files after: $MDX_COUNT_AFTER"
+          if [ "$MDX_COUNT_AFTER" -le "$MDX_COUNT_BEFORE" ]; then
+            echo "❌ ERROR: No NEW MDX file was generated! Script may have failed silently."
+            exit 1
+          fi
+          echo "✅ New MDX file generated successfully ($MDX_COUNT_BEFORE → $MDX_COUNT_AFTER files)"
+
           # Extract post title and slug from log
           TITLE=$(grep "Selected:" output.log | sed 's/.*Selected: "//' | sed 's/".*//' || echo "New Blog Post")
           SLUG=$(grep "content/blog/" output.log | head -1 | sed 's/.*content\/blog\///' | sed 's/\.mdx.*//' || echo "")
