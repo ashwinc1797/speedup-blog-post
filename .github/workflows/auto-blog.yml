@@ -29,6 +29,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.GROQ_API_KEY }}" ]; then
+            echo "❌ ERROR: GROQ_API_KEY secret is not set!"
+            echo "Go to: GitHub repo → Settings → Secrets → Actions → New secret"
+            echo "Get your free key at: https://console.groq.com"
+            exit 1
+          fi
+          echo "✅ GROQ_API_KEY is set"
+          echo "✅ PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY != '' && 'set' || 'not set (optional)' }}"
+          echo "✅ UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY != '' && 'set' || 'not set (optional)' }}"
+
       - name: Run automation
         id: blog
         env:
@@ -37,7 +49,14 @@ jobs:
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           INDEXNOW_KEY:        ${{ secrets.INDEXNOW_KEY }}
         run: |
+          set -e
           node scripts/automate.js 2>&1 | tee output.log
+          # Fail if MDX was not generated
+          if ! ls content/blog/*.mdx 1>/dev/null 2>&1; then
+            echo "❌ ERROR: No MDX file was generated! Check the logs above."
+            exit 1
+          fi
+          echo "✅ MDX file generated successfully"
           # Extract post title and slug from log
           TITLE=$(grep "Selected:" output.log | sed 's/.*Selected: "//' | sed 's/".*//' || echo "New Blog Post")
           SLUG=$(grep "content/blog/" output.log | head -1 | sed 's/.*content\/blog\///' | sed 's/\.mdx.*//' || echo "")
@@ -53,7 +72,7 @@ jobs:
             echo "No new content to commit"
           else
             git commit -m "Auto-publish blog [$(date +'%Y-%m-%d')]"
-            git push origin master
+            git push origin main
             echo "PUSHED=true" >> $GITHUB_ENV
           fi
 
@@ -67,7 +86,7 @@ jobs:
           username: ${{ secrets.NOTIFY_EMAIL }}
           password: ${{ secrets.NOTIFY_EMAIL_PASSWORD }}
           subject: "✅ New Blog Published — SpeedUp Infotech"
-          to: ${{ secrets.NOTIFY_EMAIL }}
+          to: ${{ secrets.NOTIFY_EMAILS }}
           from: SpeedUp Blog Bot
           html_body: |
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#000;color:#fff;padding:30px;border-radius:8px">
@@ -87,17 +106,9 @@ jobs:
                   <td style="padding:10px;border-bottom:1px solid #222;color:#fff;font-size:13px">${{ github.run_started_at }}</td>
                 </tr>
                 <tr>
-                  <td style="padding:10px;border-bottom:1px solid #222;color:#888;font-size:13px">Schedule</td>
-                  <td style="padding:10px;border-bottom:1px solid #222;color:#fff;font-size:13px">Mon / Wed / Fri · 6:00 AM IST</td>
-                </tr>
-                <tr>
-                  <td style="padding:10px;border-bottom:1px solid #222;color:#888;font-size:13px">AI Model</td>
-                  <td style="padding:10px;border-bottom:1px solid #222;color:#fff;font-size:13px">Groq Llama 3.3 70B</td>
-                </tr>
-                <tr>
-                  <td style="padding:10px;color:#888;font-size:13px">Cost</td>
-                  <td style="padding:10px;color:#22C55E;font-size:13px;font-weight:bold">₹0</td>
-                </tr>
+                   <td style="padding:10px;color:#888;font-size:13px">Schedule</td>
+                   <td style="padding:10px;color:#fff;font-size:13px">Mon / Wed / Fri · 6:00 AM IST</td>
+                 </tr>
               </table>
               <div style="text-align:center;margin-bottom:20px">
                 <a href="https://speedupinfotech.com/blogs/${{ steps.blog.outputs.slug }}"
