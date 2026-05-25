@@ -1,6 +1,6 @@
 .next/
 node_modules/
 .env.local
-scripts/.state.json
 *.log
 .DS_Store
+# scripts/.state.json is intentionally tracked — it stores published post history

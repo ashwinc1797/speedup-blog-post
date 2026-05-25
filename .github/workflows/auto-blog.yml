@@ -72,7 +72,7 @@ jobs:
             echo "No new content to commit"
           else
             git commit -m "Auto-publish blog [$(date +'%Y-%m-%d')]"
-            git push origin main
+            git push origin master
             echo "PUSHED=true" >> $GITHUB_ENV
           fi
 
