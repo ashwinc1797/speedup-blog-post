@@ -199,25 +199,35 @@ function pickTopic(topics, state) {
 }
 
 // ── STEP 3: FETCH IMAGES ─────────────────────────────────────
-async function fetchImage(query, fallbackUrl, fallbackAlt) {
+async function fetchImage(query, fallbackUrl, fallbackAlt, pickIndex = 0) {
   // Words that signal irrelevant photos
-  const BAD_KW = ['electrical','circuit','electronic','wiring','mechanic','inverter','voltage','smps','solar','engine','factory','construction','medical','hospital','cooking','food','nature','animal','welding','soldering']
-  const isRelevant = p => !BAD_KW.some(kw => (p.alt||'').toLowerCase().includes(kw))
+  const BAD_KW = [
+    'electrical','circuit','electronic','wiring','mechanic','inverter','voltage','smps',
+    'solar','engine','factory','construction','medical','hospital','cooking','food',
+    'nature','animal','welding','soldering','flower','beach','mountain','wedding',
+    'fashion','fitness','gym','sport','car','vehicle','architecture','real estate'
+  ]
+  const isRelevant = p => !BAD_KW.some(kw => (p.alt || '').toLowerCase().includes(kw))
 
-  // Try Pexels — always append "software" for IT relevance
+  // Try Pexels — use query as-is (no blanket 'software' suffix)
   const pexelsKey = process.env.PEXELS_API_KEY
   if (pexelsKey) {
     try {
-      const safeQuery = `${query} software`
-      const res  = await fetch(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(safeQuery)}&per_page=10&orientation=landscape`,
+      const res = await fetch(
+        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape`,
         { headers: { Authorization: pexelsKey } }
       )
       const data = await res.json()
       const good = (data.photos || []).filter(isRelevant)
       if (good.length) {
-        const p = good[0]
-        return { url: p.src.large, heroUrl: p.src.large2x || p.src.large, alt: p.alt || query, credit: `Photo by ${p.photographer} on Pexels` }
+        // Pick from top results with variety (not always first)
+        const pick = good[pickIndex % good.length]
+        return {
+          url:     pick.src.large,
+          heroUrl: pick.src.large2x || pick.src.large,
+          alt:     pick.alt || query,
+          credit:  `Photo by ${pick.photographer} on Pexels`
+        }
       }
     } catch {}
   }
@@ -226,14 +236,19 @@ async function fetchImage(query, fallbackUrl, fallbackAlt) {
   const unsplashKey = process.env.UNSPLASH_ACCESS_KEY
   if (unsplashKey) {
     try {
-      const res  = await fetch(
-        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=3&orientation=landscape`,
+      const res = await fetch(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=10&orientation=landscape`,
         { headers: { Authorization: `Client-ID ${unsplashKey}` } }
       )
       const data = await res.json()
       if (data.results?.length) {
-        const p = data.results[0]
-        return { url: `${p.urls.regular}&w=800&q=80`, heroUrl: `${p.urls.regular}&w=1200&h=630&fit=crop&q=80`, alt: p.alt_description || query, credit: `Photo by ${p.user.name} on Unsplash` }
+        const pick = data.results[pickIndex % data.results.length]
+        return {
+          url:     `${pick.urls.regular}&w=800&q=80`,
+          heroUrl: `${pick.urls.regular}&w=1200&h=630&fit=crop&q=80`,
+          alt:     pick.alt_description || query,
+          credit:  `Photo by ${pick.user.name} on Unsplash`
+        }
       }
     } catch {}
   }
@@ -254,19 +269,56 @@ const FALLBACK_POOL = [
 
 async function getImages(topic, state) {
   console.log('\n📸 Step 3: Fetching topic-matched images...')
-  const q     = topic.imageQuery || 'technology coding laptop'
-  const fbUrl = FALLBACK_POOL[(state.total || 0) % FALLBACK_POOL.length]
+  const q   = topic.imageQuery || 'technology coding laptop'
+  const idx = state.total || 0
+  const fbUrl = FALLBACK_POOL[idx % FALLBACK_POOL.length]
 
-  // Different queries for hero and 3 body images
-  const heroImg  = await fetchImage(q, fbUrl, topic.title)
-  const bodyImg1 = await fetchImage(`${q} professional`, FALLBACK_POOL[(state.total + 1) % FALLBACK_POOL.length], topic.keyword)
-  const bodyImg2 = await fetchImage(`${q} career`, FALLBACK_POOL[(state.total + 2) % FALLBACK_POOL.length], topic.keyword)
-  const bodyImg3 = await fetchImage(`IT training students laptop`, FALLBACK_POOL[(state.total + 3) % FALLBACK_POOL.length], 'SpeedUp Infotech Pune')
+  // Build category-specific, varied queries for each image slot
+  const categoryQueries = {
+    'trending-ai': [
+      `${q} artificial intelligence`,
+      'developer working laptop screen code',
+      'machine learning data visualization',
+      'students learning technology classroom'
+    ],
+    'career': [
+      `${q} professional office`,
+      'software developer job interview',
+      'IT professional working computer',
+      'students coding bootcamp training'
+    ],
+    'comparison': [
+      `${q} technology comparison`,
+      'programmer dual screen setup',
+      'coding languages framework development',
+      'IT students group project laptop'
+    ],
+    'beginner': [
+      `${q} learning tutorial`,
+      'beginner programmer laptop study',
+      'online learning education technology',
+      'student studying programming course'
+    ],
+    'technical': [
+      `${q} developer`,
+      'full stack web development code',
+      'software engineer technical work',
+      'programming project team collaboration'
+    ],
+  }
 
-  console.log(`   ✓ Hero:   ${heroImg.credit}`)
-  console.log(`   ✓ Body 1: ${bodyImg1.credit}`)
-  console.log(`   ✓ Body 2: ${bodyImg2.credit}`)
-  console.log(`   ✓ Body 3: ${bodyImg3.credit}`)
+  const queries = categoryQueries[topic.category] || categoryQueries['technical']
+
+  // Fetch 4 images with distinct queries and varied pick index for variety
+  const heroImg  = await fetchImage(queries[0], fbUrl,                                    topic.title,   idx % 3)
+  const bodyImg1 = await fetchImage(queries[1], FALLBACK_POOL[(idx+1) % FALLBACK_POOL.length], topic.keyword, (idx+1) % 4)
+  const bodyImg2 = await fetchImage(queries[2], FALLBACK_POOL[(idx+2) % FALLBACK_POOL.length], topic.keyword, (idx+2) % 4)
+  const bodyImg3 = await fetchImage(queries[3], FALLBACK_POOL[(idx+3) % FALLBACK_POOL.length], 'SpeedUp Infotech Pune', (idx+3) % 4)
+
+  console.log(`   ✓ Hero:   ${heroImg.credit}  ["${queries[0]}")`)
+  console.log(`   ✓ Body 1: ${bodyImg1.credit}  ["${queries[1]}")`)
+  console.log(`   ✓ Body 2: ${bodyImg2.credit}  ["${queries[2]}")`)
+  console.log(`   ✓ Body 3: ${bodyImg3.credit}  ["${queries[3]}")`)
 
   return { hero: heroImg, body: [bodyImg1, bodyImg2, bodyImg3] }
 }
