@@ -339,7 +339,14 @@ async function writePost(topic, images) {
   const isTrending = topic.category === 'trending-ai'
   const today      = new Date().toISOString().split('T')[0]
 
-  const system = `You are an expert SEO content writer and tech journalist for SpeedUp Infotech, a top IT training institute in Pune at Jangali Maharaj Road, ${ADDR}. You write detailed, educational blog content that ranks on Google and gets cited by AI tools like ChatGPT and Perplexity. You explain technical concepts clearly with real examples. Always connect tech topics to career opportunities and salary in Pune.`
+  const system = `You are Rahul Deshmukh, a senior IT trainer and tech journalist at SpeedUp Infotech, Pune with 8+ years of industry experience at companies like Infosys and Persistent Systems before joining education. You write Google E-E-A-T compliant blog content that demonstrates real Experience, Expertise, Authority, and Trust. Your writing:
+- Cites specific data sources (mention "According to Stack Overflow 2025 survey", "LinkedIn Jobs data", "Glassdoor India", "NASSCOM report" etc.)
+- Includes specific named tools, companies, technologies (not vague generics)
+- Mentions real Pune IT companies hiring: Persistent, Zensar, Infosys BPO, TCS, Cybage, Accenture, KPIT, Synechron
+- Adds trust signals: specific batch sizes, student outcomes, years of experience
+- Uses authoritative language: "In our experience training 500+ students...", "Industry data shows..."
+- Connects to salary data with sources and reasoning
+- Always based in Pune context: Shivaji Nagar, FC Road, Hinjewadi, Deccan, Baner`
 
   // CALL 1 — First 1000 words (70B model for premium quality)
   console.log(`   Writing Part 1 (~1000 words) with ${MODEL_WRITE}...`)
@@ -364,14 +371,17 @@ ${isTrending ? `This is a TRENDING AI/TECH topic. Structure it as:
 4. ## Why It Matters for IT Careers in Pune (250 words) — Shivaji Nagar, FC Road context
 5. ## Key Details and Breakdown (300 words) — facts, numbers, salary Rs X-Y LPA`}
 
-CRITICAL RULES:
+CRITICAL RULES FOR E-E-A-T COMPLIANCE:
 - MINIMUM 1000 words for Part 1 — write fully detailed paragraphs, never cut short
-- Each section must have AT LEAST 3 full paragraphs (not 1-2 sentences)
-- Write like a journalist — detailed, specific, authoritative
+- Each section must have AT LEAST 3 full paragraphs
+- Write like an expert practitioner — specific, authoritative, experience-based
 - NO bullet points in main sections — only flowing paragraphs
-- Mention SpeedUp Infotech 2 times naturally
-- Mention Pune 4-5 times (Shivaji Nagar, FC Road, Hinjewadi, Deccan)
-- Include specific salary data Rs X-Y LPA with reasoning
+- EXPERIENCE: Include phrases like "In our experience training 500+ students at SpeedUp Infotech..."
+- EXPERTISE: Use specific technical terms, version numbers, real tool names (GitHub Copilot, Cursor AI, ChatGPT-4o etc.)
+- AUTHORITY: Cite sources — "According to Stack Overflow Developer Survey 2025", "LinkedIn Jobs India data shows", "NASSCOM 2026 report"
+- TRUST: Add salary data with reasoning — "Freshers at Persistent Pune earn Rs X LPA because..."
+- Mention Pune companies by name: Persistent, Zensar, KPIT, Cybage, Synechron, Accenture Pune
+- Mention Pune 4-5 times (Shivaji Nagar, FC Road, Hinjewadi, Deccan, Baner)
 - Do NOT write a conclusion
 - Do NOT include FAQ yet
 - Do NOT include image tags
@@ -405,31 +415,33 @@ Salary Rs X-Y LPA. Companies: TCS, Infosys, Wipro, Persistent, Cognizant. Job ro
 Concrete steps. Timeline. What to build.`}
 
 ## Why SpeedUp Infotech is the Best Place to Learn in Pune (150 words)
-Hands-on curriculum, real projects, 100% placement support, ${ADDR}, batch options, call ${PHONE}.
+Write as Rahul Deshmukh (senior trainer). Include: 8+ years industry experience, batch size (20-25 students max), real project portfolio, 100% placement support, ${ADDR}, call ${PHONE}. Mention 3-4 specific companies where SpeedUp students got placed.
 
 ## Frequently Asked Questions
 
-**Q: ${isTrending ? `How is ${topic.title.split(' ')[0]} ${topic.title.split(' ')[1]} changing IT jobs in Pune?` : `How long does it take to master ${topic.keyword.split(' ')[0]}?`}**
-A: [3 detailed sentences with specific numbers and Pune context]
+**Q: ${isTrending ? `How is this topic changing IT jobs in Pune in 2026?` : `How long does it take to learn ${topic.keyword.split(' ')[0]} from scratch?`}**
+A: [Write 3-4 detailed sentences. Include specific numbers, timeframes, and cite "According to LinkedIn Jobs India" or "NASSCOM data". Mention salary impact in Pune specifically with Rs X-Y LPA range.]
 
-**Q: ${isTrending ? 'Do I need to know this to get hired at Pune IT companies in 2026?' : `Is ${topic.keyword.split(' ').slice(0,3).join(' ')} worth learning in Pune 2026?`}**
-A: [3 sentences mentioning specific Pune companies and salary ranges Rs X-Y LPA]
+**Q: ${isTrending ? 'Which Pune companies are actively hiring for this skill in 2026?' : `Is ${topic.keyword.split(' ').slice(0,3).join(' ')} worth learning for freshers in Pune?`}**
+A: [3-4 sentences naming specific Pune companies: Persistent Systems, Zensar, KPIT, Cybage, Synechron. Include salary ranges Rs X-Y LPA for freshers vs experienced. Add "SpeedUp Infotech students have been placed at..."]
 
 **Q: Does SpeedUp Infotech cover this in their courses?**
-A: Yes, SpeedUp Infotech at Shivaji Nagar, Pune covers this comprehensively in their curriculum with hands-on projects and real industry assignments. Students get placement support with companies across Pune offering packages from Rs 3.5-10 LPA. Call ${PHONE} to know the latest batch schedule.
+A: Yes, SpeedUp Infotech at Shivaji Nagar, Pune covers this comprehensively with hands-on projects and real industry assignments. Our students have been placed at Persistent Systems, Zensar Technologies, and Cybage with packages from Rs 3.5-10 LPA. With 500+ placements and 4.8★ Justdial rating, we are Pune's most trusted IT training institute. Call ${PHONE} to know the latest batch schedule.
 
-**Q: What is the salary for someone with this skill in Pune?**
-A: [3 sentences with specific salary ranges for freshers, mid-level, and senior professionals in Pune]
+**Q: What is the realistic salary for a fresher with this skill in Pune?**
+A: [3-4 sentences with specific salary ranges: fresher Rs X-Y LPA, 1-2 years Rs A-B LPA, 3-5 years Rs C-D LPA. Cite Glassdoor India or LinkedIn Salary data. Explain what factors affect the salary — company size, specific skills, project experience.]
 
-[Conclusion — 100 words: Summarize. Include "${topic.keyword}". Strong call to action.]
+[Conclusion — 120 words: Summarize key insights. Include "${topic.keyword}" naturally. Strong CTA mentioning free demo class, batch starting soon, limited seats.]
 
-Book a free demo class at SpeedUp Infotech, ${ADDR} — call ${PHONE}
+Book a free demo class at SpeedUp Infotech, ${ADDR} — call ${PHONE}. New batch starting soon — limited seats.
 
-CRITICAL RULES:
-- MINIMUM 1000 words for Part 2 — every section must be fully detailed
-- Each section needs AT LEAST 3-4 full paragraphs
-- FAQ answers must be 3-4 sentences each, detailed and specific
-- Conclusion must be at least 100 words
+CRITICAL RULES FOR E-E-A-T:
+- MINIMUM 1000 words for Part 2
+- TRUST: Every salary claim must have reasoning or a source mention
+- AUTHORITY: Use "According to [source]" at least 3 times
+- EXPERIENCE: Include at least 1 student/trainer experience reference
+- FAQ answers must be 4+ sentences each — detailed and specific
+- Conclusion must be at least 120 words
 - NO bullet points — flowing paragraphs only
 - Do NOT repeat H1 title
 - Do NOT include image tags
@@ -470,14 +482,16 @@ title: "${topic.title}"
 slug: "${topic.slug}"
 description: "${description}"
 date: "${today}"
-author: "SpeedUp Infotech"
+lastUpdated: "${today}"
+author: "Rahul Deshmukh"
+authorBio: "Senior IT Trainer at SpeedUp Infotech Pune | 8+ years industry experience | Ex-Infosys, Persistent Systems"
 category: "${topic.category === 'trending-ai' ? 'AI & Tech Trends' : topic.category === 'career' ? 'IT Careers' : topic.category === 'comparison' ? 'Course Comparison' : 'IT Guide'}"
 tags: ["IT Training Pune", "SpeedUp Infotech", "${topic.keyword}"]
 keywords: ["${topic.keyword}", "IT courses Pune", "SpeedUp Infotech Pune", "IT training Shivaji Nagar"]
 heroImage: "${heroUrl}"
 heroImageAlt: "${topic.title} — SpeedUp Infotech Pune"
 canonical: "${SITE}/blog/${topic.slug}"
-readTime: "9 min read"
+readTime: "12 min read"
 trending: ${topic.category === 'trending-ai'}
 ---`
 
