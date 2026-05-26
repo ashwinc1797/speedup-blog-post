@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import SeoHead from './seo-head.js'
+import AuthorBox from '../../../components/AuthorBox.js'
 
 export default function BlogPost() {
   const params   = useParams()
@@ -109,6 +110,9 @@ export default function BlogPost() {
               style={{ fontSize: 15, lineHeight: 1.8, color: 'rgba(255,255,255,0.75)' }}
               dangerouslySetInnerHTML={{ __html: post.htmlContent }}
             />
+
+            {/* Author Box — E-E-A-T signal for Google */}
+            <AuthorBox author={post.author} authorBio={post.authorBio} />
 
             {/* Internal links section */}
             <div style={{

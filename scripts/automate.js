@@ -21,31 +21,37 @@ const PHONE = '+91-8904581086'
 const ADDR  = 'Shivaji Nagar, near FC Road, Pune'
 
 // ── ROTATING AUTHOR PERSONAS ──────────────────────────────────
-// 4 real-sounding Pune IT trainer profiles for E-E-A-T diversity
+// Real SpeedUp Infotech trainers — rotates per blog post for E-E-A-T diversity
 const AUTHORS = [
   {
-    name:       'Rahul Deshmukh',
-    bio:        'Senior IT Trainer at SpeedUp Infotech Pune | 8+ years industry experience | Ex-Infosys, Persistent Systems',
-    background: 'Infosys and Persistent Systems',
-    specialty:  'Full Stack Development and AI tools',
+    name:       'Ashwin Chaudhari',
+    bio:        'Data Science & AI Trainer at SpeedUp Infotech Pune | Specialist in Machine Learning, Deep Learning & AI tools | Helping students land AI/ML roles in Pune',
+    background: 'the AI & Data Science industry',
+    specialty:  'Data Science, AI & Machine Learning',
   },
   {
-    name:       'Priya Kulkarni',
-    bio:        'Lead Tech Trainer at SpeedUp Infotech Pune | 6+ years in software development | Ex-Wipro, Zensar Technologies',
-    background: 'Wipro and Zensar Technologies',
-    specialty:  'Python, Data Analytics and Machine Learning',
+    name:       'Chetna Vasave',
+    bio:        'Data Analytics Trainer at SpeedUp Infotech Pune | Expert in Excel, Power BI, SQL & Python Analytics | Trained 200+ students in data-driven careers',
+    background: 'the Data Analytics and Business Intelligence domain',
+    specialty:  'Data Analytics, Power BI & SQL',
   },
   {
-    name:       'Amit Joshi',
-    bio:        'Software Engineer & Trainer at SpeedUp Infotech Pune | 7+ years industry experience | Ex-TCS, Cybage Software',
-    background: 'TCS and Cybage Software',
-    specialty:  'MERN Stack and Cloud Technologies',
+    name:       'Pratik Sabale',
+    bio:        'Full Stack Development Trainer at SpeedUp Infotech Pune | Expert in MERN Stack, Node.js & Python Full Stack | Helping freshers build real-world projects',
+    background: 'Full Stack software development',
+    specialty:  'Full Stack Development, MERN Stack & Python',
   },
   {
-    name:       'Sneha Patil',
-    bio:        'IT Career Mentor at SpeedUp Infotech Pune | 5+ years in tech industry | Ex-Accenture, KPIT Technologies',
-    background: 'Accenture and KPIT Technologies',
-    specialty:  'React JS, Career Guidance and Interview Preparation',
+    name:       'Rutvij Mahamuni',
+    bio:        'Frontend Development Trainer at SpeedUp Infotech Pune | Specialist in React JS, Next.js & Modern UI Development | Passionate about building beautiful web apps',
+    background: 'Frontend and UI/UX development',
+    specialty:  'React JS, Next.js & Frontend Development',
+  },
+  {
+    name:       'Sameer',
+    bio:        'Cloud Computing Trainer at SpeedUp Infotech Pune | Expert in AWS, Azure & DevOps | Helping IT professionals transition into high-paying cloud roles in Pune',
+    background: 'Cloud infrastructure and DevOps',
+    specialty:  'Cloud Computing, AWS, Azure & DevOps',
   },
 ]
 

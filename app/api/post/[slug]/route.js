@@ -108,6 +108,7 @@ export async function GET(request, { params }) {
       description:  post.frontmatter.description,
       date:         post.frontmatter.date,
       author:       post.frontmatter.author,
+      authorBio:    post.frontmatter.authorBio,
       category:     post.frontmatter.category,
       tags:         post.frontmatter.tags || [],
       keywords:     post.frontmatter.keywords || [],
