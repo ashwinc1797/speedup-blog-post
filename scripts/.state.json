@@ -13,7 +13,10 @@
     "what-is-mern-stack-beginners-guide-pune-2026",
     "full-stack-developer-salary-pune-2026",
     "best-it-training-institutes-pune-2026",
-    "best-it-training-institutes-pune-2026"
+    "best-it-training-institutes-pune-2026",
+    "react-19-update-pune",
+    "ai-coding-tools-developers-2026",
+    "chatgpt-vs-github-copilot-cursor-ai-developers"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -27,7 +30,10 @@
     "MERN stack salary Pune freshers",
     "IT courses after engineering Pune 2026",
     "what is MERN stack beginners guide Pune",
-    "full stack developer salary Pune 2026"
+    "full stack developer salary Pune 2026",
+    "React 19 update Pune",
+    "AI coding tools developers 2026",
+    "ChatGPT vs GitHub Copilot developers"
   ],
   "publishedPosts": [
     {
@@ -89,8 +95,32 @@
       "slug": "full-stack-developer-salary-pune-2026",
       "title": "Full Stack Developer Salary Pune 2026",
       "category": "career"
+    },
+    {
+      "slug": "react-19-update-pune",
+      "title": "React 19 Update: A Game-Changer for Frontend Developers in Pune",
+      "category": "trending-ai",
+      "keyword": "React 19 update Pune",
+      "publishedAt": "2026-05-25T19:39:34.247Z",
+      "words": 2212
+    },
+    {
+      "slug": "ai-coding-tools-developers-2026",
+      "title": "Top AI Coding Tools Every Developer Must Use in 2026",
+      "category": "trending-ai",
+      "keyword": "AI coding tools developers 2026",
+      "publishedAt": "2026-05-25T19:52:11.427Z",
+      "words": 3123
+    },
+    {
+      "slug": "chatgpt-vs-github-copilot-cursor-ai-developers",
+      "title": "ChatGPT vs GitHub Copilot vs Cursor AI — Which is Best for Developers?",
+      "category": "trending-ai",
+      "keyword": "ChatGPT vs GitHub Copilot developers",
+      "publishedAt": "2026-05-26T12:28:47.174Z",
+      "words": 2744
     }
   ],
-  "total": 14,
-  "lastRun": "2026-05-25T13:19:13.705Z"
+  "total": 17,
+  "lastRun": "2026-05-26T12:28:47.175Z"
 }

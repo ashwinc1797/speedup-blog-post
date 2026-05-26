@@ -89,73 +89,40 @@ function saveState(s) { fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2))
 async function researchKeywords(state) {
   console.log('\n🔑 Step 1: Researching trending keywords...')
 
-  const used    = state.usedKeywords?.slice(-40).join(', ') || 'none yet'
-  const covered = state.publishedPosts?.map(p => p.title).slice(-10).join(', ') || 'none yet'
+  const used    = state.usedKeywords?.slice(-20).join(', ') || 'none yet'
+  const covered = state.publishedPosts?.map(p => p.title).slice(-8).join(', ') || 'none yet'
   const today   = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
 
   const text = await groq(
-    `You are an expert SEO strategist and tech industry analyst. You understand the Indian IT job market deeply, especially Pune. You track AI/tech trends and know what developers and students search for.`,
-    `Generate 15 high-value blog topic ideas for SpeedUp Infotech, an IT training institute in Pune.
+    `You are an SEO strategist for SpeedUp Infotech, an IT training institute in Pune. Return ONLY a valid JSON array, no other text.`,
+    `Generate 10 blog topic ideas for ${today}. Courses: MERN Stack, Full Stack, Python, Data Analytics, AI & ML, React JS.
 
-Current month: ${today}
-Institute: SpeedUp Infotech, Shivaji Nagar near FC Road, Pune
-Courses: MERN Stack, Full Stack, Python Full Stack, Data Analytics, AI & ML, React JS, Python
+Categories needed: trending-ai (4 topics), career (3 topics), comparison (2 topics), beginner (1 topic).
+Already covered (skip these): ${covered}
+Already used keywords (skip these): ${used}
 
-COVER THESE CATEGORIES (3 topics each):
+Return ONLY this JSON array (no markdown, no explanation):
+[{"title":"...","keyword":"...","slug":"url-slug","category":"trending-ai","imageQuery":"3 word photo search","priority":1}]
 
-1. TRENDING AI & TECH NEWS (most important)
-   - Latest AI tools developers must know in 2026
-   - New framework/technology updates (React 19, Python 3.13, Node.js updates etc)
-   - ChatGPT, Claude, Gemini updates for developers
-   - GitHub Copilot, Cursor AI, AI coding tools
-   - Hot topics: LLMs, RAG, Vector databases, AI agents
-
-2. PUNE IT CAREER & SALARY
-   - Current salary trends for specific roles in Pune
-   - Which companies are hiring what roles in Pune
-   - Interview experience at specific Pune companies
-
-3. COURSE COMPARISONS
-   - X vs Y comparisons for courses/technologies
-   - Which course gets jobs faster in Pune
-
-4. BEGINNER GUIDES
-   - What is [technology] explained for beginners
-   - How to start learning [technology] from scratch
-
-5. ADVANCED TECHNICAL
-   - Specific technical skills companies want in Pune 2026
-   - Project ideas that get you hired
-
-Already covered (DO NOT repeat): ${covered}
-Already used keywords (DO NOT repeat): ${used}
-
-Return ONLY valid JSON array of 15 objects:
-[
-  {
-    "title": "exact engaging blog title",
-    "keyword": "primary SEO keyword phrase",
-    "slug": "url-friendly-slug",
-    "category": "trending-ai|career|comparison|beginner|technical",
-    "imageQuery": "3-4 word Pexels search query for relevant photo",
-    "priority": 1-5
-  }
-]
-
-Make titles specific and clickable. Include year 2026. Prioritize trending AI topics.`,
-    MODEL_RESEARCH,   // 8B model — keyword research only needs JSON, not creative writing
+Rules: Include 2026 in titles. Make slugs URL-safe with hyphens only.`,
+    MODEL_WRITE,  // 70B model — more reliable JSON formatting
     3,
-    1200              // Enough tokens for full 15-item JSON list
+    1500
   )
 
   try {
-    const match   = text.match(/\[[\s\S]*\]/)
+    // Strip any markdown code fences if model wraps in ```json
+    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+    const match   = cleaned.match(/\[[\s\S]*\]/)
+    if (!match) throw new Error('No JSON array found in response')
     const topics  = JSON.parse(match[0])
+    if (!Array.isArray(topics) || topics.length === 0) throw new Error('Empty topics array')
     const sorted  = topics.sort((a, b) => a.priority - b.priority)
     console.log(`   ✓ ${sorted.length} trending topics researched`)
     console.log(`   Top topic: "${sorted[0].title}"`)
     return sorted
   } catch (e) {
+    console.log(`   ⚠️  Keyword research parse failed: ${e.message}`)
     console.log('   ℹ️  Using fallback topics')
     return getFallbackTopics(state)
   }
