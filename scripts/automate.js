@@ -20,6 +20,40 @@ const SITE  = 'https://speedupinfotech.com'
 const PHONE = '+91-8904581086'
 const ADDR  = 'Shivaji Nagar, near FC Road, Pune'
 
+// ── ROTATING AUTHOR PERSONAS ──────────────────────────────────
+// 4 real-sounding Pune IT trainer profiles for E-E-A-T diversity
+const AUTHORS = [
+  {
+    name:       'Rahul Deshmukh',
+    bio:        'Senior IT Trainer at SpeedUp Infotech Pune | 8+ years industry experience | Ex-Infosys, Persistent Systems',
+    background: 'Infosys and Persistent Systems',
+    specialty:  'Full Stack Development and AI tools',
+  },
+  {
+    name:       'Priya Kulkarni',
+    bio:        'Lead Tech Trainer at SpeedUp Infotech Pune | 6+ years in software development | Ex-Wipro, Zensar Technologies',
+    background: 'Wipro and Zensar Technologies',
+    specialty:  'Python, Data Analytics and Machine Learning',
+  },
+  {
+    name:       'Amit Joshi',
+    bio:        'Software Engineer & Trainer at SpeedUp Infotech Pune | 7+ years industry experience | Ex-TCS, Cybage Software',
+    background: 'TCS and Cybage Software',
+    specialty:  'MERN Stack and Cloud Technologies',
+  },
+  {
+    name:       'Sneha Patil',
+    bio:        'IT Career Mentor at SpeedUp Infotech Pune | 5+ years in tech industry | Ex-Accenture, KPIT Technologies',
+    background: 'Accenture and KPIT Technologies',
+    specialty:  'React JS, Career Guidance and Interview Preparation',
+  },
+]
+
+// Pick author based on post count so it rotates every post
+function pickAuthor(state) {
+  return AUTHORS[(state.total || 0) % AUTHORS.length]
+}
+
 // ── GROQ ──────────────────────────────────────────────────────
 // Model strategy:
 //   8B  (llama-3.1-8b-instant)      → keyword research  (fast, cheap, just JSON output)
@@ -300,18 +334,20 @@ async function getImages(topic, state) {
 }
 
 // ── STEP 4: WRITE BLOG POST (2 calls = ~2000 words) ──────────
-async function writePost(topic, images) {
+async function writePost(topic, images, state) {
   console.log('\n✍️  Step 4: Writing 2000-word blog post...')
 
   const isTrending = topic.category === 'trending-ai'
   const today      = new Date().toISOString().split('T')[0]
+  const author     = pickAuthor(state)
 
-  const system = `You are Rahul Deshmukh, a senior IT trainer and tech journalist at SpeedUp Infotech, Pune with 8+ years of industry experience at companies like Infosys and Persistent Systems before joining education. You write Google E-E-A-T compliant blog content that demonstrates real Experience, Expertise, Authority, and Trust. Your writing:
+  const system = `You are ${author.name}, a ${author.bio}. You specialise in ${author.specialty}. You write Google E-E-A-T compliant blog content for SpeedUp Infotech that demonstrates real Experience, Expertise, Authority, and Trust. Your writing:
 - Cites specific data sources (mention "According to Stack Overflow 2025 survey", "LinkedIn Jobs data", "Glassdoor India", "NASSCOM report" etc.)
 - Includes specific named tools, companies, technologies (not vague generics)
 - Mentions real Pune IT companies hiring: Persistent, Zensar, Infosys BPO, TCS, Cybage, Accenture, KPIT, Synechron
 - Adds trust signals: specific batch sizes, student outcomes, years of experience
 - Uses authoritative language: "In our experience training 500+ students...", "Industry data shows..."
+- Refers to your own background: "Having worked at ${author.background} before joining SpeedUp Infotech..."
 - Connects to salary data with sources and reasoning
 - Always based in Pune context: Shivaji Nagar, FC Road, Hinjewadi, Deccan, Baner`
 
@@ -425,7 +461,7 @@ CRITICAL RULES FOR E-E-A-T:
 }
 
 // ── STEP 5: BUILD FINAL MDX ───────────────────────────────────
-function buildMdx(topic, images, fullBody, today) {
+function buildMdx(topic, images, fullBody, today, state) {
   // Extract description from first paragraph
   const lines       = fullBody.split('\n').filter(l => l.trim() && !l.startsWith('#'))
   const description = (lines[0] || topic.title).replace(/[*_`[\]()]/g, '').slice(0, 155).trim()
@@ -444,14 +480,16 @@ function buildMdx(topic, images, fullBody, today) {
 
   const heroUrl = images.hero.heroUrl || images.hero.url
 
+  const author = pickAuthor(state)
+
   const frontmatter = `---
 title: "${topic.title}"
 slug: "${topic.slug}"
 description: "${description}"
 date: "${today}"
 lastUpdated: "${today}"
-author: "Rahul Deshmukh"
-authorBio: "Senior IT Trainer at SpeedUp Infotech Pune | 8+ years industry experience | Ex-Infosys, Persistent Systems"
+author: "${author.name}"
+authorBio: "${author.bio}"
 category: "${topic.category === 'trending-ai' ? 'AI & Tech Trends' : topic.category === 'career' ? 'IT Careers' : topic.category === 'comparison' ? 'Course Comparison' : 'IT Guide'}"
 tags: ["IT Training Pune", "SpeedUp Infotech", "${topic.keyword}"]
 keywords: ["${topic.keyword}", "IT courses Pune", "SpeedUp Infotech Pune", "IT training Shivaji Nagar"]
@@ -575,10 +613,10 @@ async function main() {
   const images = await getImages(topic, state)
 
   // 4. Write 2000-word post
-  const { fullBody, totalWords, today } = await writePost(topic, images)
+  const { fullBody, totalWords, today } = await writePost(topic, images, state)
 
   // 5. Build MDX
-  const content  = buildMdx(topic, images, fullBody, today)
+  const content  = buildMdx(topic, images, fullBody, today, state)
   const finalWc  = content.split(/\s+/).length
 
   // 6. Save file
