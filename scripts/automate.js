@@ -282,6 +282,56 @@ const FALLBACK_POOL = [
   'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&h=630&fit=crop&q=80',
 ]
 
+// ── POLLINATIONS.AI HERO IMAGE ────────────────────────────────
+// 100% free, no API key needed — generates a unique AI image per blog post
+function buildPollinationsPrompt(topic) {
+  // Category-specific visual styles for more relevant images
+  const styleMap = {
+    'trending-ai':  'futuristic digital interface, glowing neural network, modern tech workspace, dark background with neon blue accents, professional photography style',
+    'career':       'professional IT office Pune India, modern workspace, confident developer at laptop, bright corporate environment, cinematic lighting',
+    'comparison':   'split screen technology comparison, two coding interfaces side by side, modern developer setup, clean minimal dark theme',
+    'beginner':     'young student learning to code on laptop, friendly classroom environment, bright colorful tech education, motivational atmosphere',
+    'technical':    'close up of clean code on multiple monitors, dark IDE theme, professional software engineering setup, depth of field photography',
+  }
+
+  const style = styleMap[topic.category] || styleMap['technical']
+
+  // Build a specific prompt from the blog title
+  const subject = topic.title
+    .replace(/[—–-]+/g, 'and')
+    .replace(/[?!]/g, '')
+    .slice(0, 80)
+
+  return `${subject}, ${style}, high quality, 4K, photorealistic, no text, no watermark, no logo`
+}
+
+async function generateHeroImage(topic, fallbackUrl) {
+  try {
+    const prompt  = buildPollinationsPrompt(topic)
+    const encoded = encodeURIComponent(prompt)
+    // Use slug as seed for consistency — same topic always gets same image
+    const seed    = topic.slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+    const url     = `https://image.pollinations.ai/prompt/${encoded}?width=1200&height=630&seed=${seed}&nologo=true&model=flux`
+
+    // Verify the URL is reachable (Pollinations returns the image directly)
+    const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(8000) })
+    if (res.ok || res.status === 200) {
+      console.log(`   ✓ Hero:   Pollinations AI  (flux model, seed=${seed})`)
+      return {
+        url,
+        heroUrl: url,
+        alt:     `${topic.title} — SpeedUp Infotech Pune`,
+        credit:  'Generated with Pollinations AI',
+      }
+    }
+  } catch (e) {
+    console.log(`   ⚠️  Pollinations failed (${e.message}) — using stock photo fallback`)
+  }
+
+  // Fallback to stock photo if Pollinations is down
+  return null
+}
+
 async function getImages(topic, state) {
   console.log('\n📸 Step 3: Fetching topic-matched images...')
   const q   = topic.imageQuery || 'technology coding laptop'
@@ -325,13 +375,16 @@ async function getImages(topic, state) {
 
   const queries = categoryQueries[topic.category] || categoryQueries['technical']
 
-  // Fetch 4 images with distinct queries and varied pick index for variety
-  const heroImg  = await fetchImage(queries[0], fbUrl,                                    topic.title,   idx % 3)
+  // Hero: try Pollinations AI first (free, unique, topic-specific)
+  // Body images: Pexels/Unsplash stock photos (reliable, fast)
+  const pollinationsHero = await generateHeroImage(topic, fbUrl)
+  const heroImg  = pollinationsHero || await fetchImage(queries[0], fbUrl, topic.title, idx % 3)
+
   const bodyImg1 = await fetchImage(queries[1], FALLBACK_POOL[(idx+1) % FALLBACK_POOL.length], topic.keyword, (idx+1) % 4)
   const bodyImg2 = await fetchImage(queries[2], FALLBACK_POOL[(idx+2) % FALLBACK_POOL.length], topic.keyword, (idx+2) % 4)
   const bodyImg3 = await fetchImage(queries[3], FALLBACK_POOL[(idx+3) % FALLBACK_POOL.length], 'SpeedUp Infotech Pune', (idx+3) % 4)
 
-  console.log(`   ✓ Hero:   ${heroImg.credit}  ["${queries[0]}")`)
+  if (!pollinationsHero) console.log(`   ✓ Hero:   ${heroImg.credit}  ["${queries[0]}")`)
   console.log(`   ✓ Body 1: ${bodyImg1.credit}  ["${queries[1]}")`)
   console.log(`   ✓ Body 2: ${bodyImg2.credit}  ["${queries[2]}")`)
   console.log(`   ✓ Body 3: ${bodyImg3.credit}  ["${queries[3]}")`)
