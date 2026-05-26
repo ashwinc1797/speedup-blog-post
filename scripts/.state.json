@@ -19,7 +19,8 @@
     "chatgpt-vs-github-copilot-cursor-ai-developers",
     "trending-ai-technologies-2026",
     "ai-trends-2026",
-    "leveraging-ai-for-business-growth-2026"
+    "leveraging-ai-for-business-growth-2026",
+    "top-ai-and-ml-trends-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -39,7 +40,8 @@
     "ChatGPT vs GitHub Copilot developers",
     "AI technologies 2026",
     "AI trends 2026",
-    "AI for business"
+    "AI for business",
+    "AI and ML Trends 2026"
   ],
   "publishedPosts": [
     {
@@ -149,8 +151,16 @@
       "keyword": "AI for business",
       "publishedAt": "2026-05-26T18:18:33.540Z",
       "words": 2955
+    },
+    {
+      "slug": "top-ai-and-ml-trends-2026",
+      "title": "Top AI and ML Trends to Learn in 2026",
+      "category": "trending-ai",
+      "keyword": "AI and ML Trends 2026",
+      "publishedAt": "2026-05-26T19:31:58.623Z",
+      "words": 2963
     }
   ],
-  "total": 20,
-  "lastRun": "2026-05-26T18:18:33.540Z"
+  "total": 21,
+  "lastRun": "2026-05-26T19:31:58.623Z"
 }

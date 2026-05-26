@@ -305,42 +305,62 @@ function buildPollinationsPrompt(topic) {
   return `${subject}, ${style}, high quality, 4K, photorealistic, no text, no watermark, no logo`
 }
 
-async function generateHeroImage(topic, fallbackUrl) {
-  try {
-    const prompt  = buildPollinationsPrompt(topic)
-    const encoded = encodeURIComponent(prompt)
-    const seed    = topic.slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
-    const url     = `https://image.pollinations.ai/prompt/${encoded}?width=1200&height=630&seed=${seed}&nologo=true&model=flux`
-
-    console.log(`   ⏳ Generating AI hero image (this takes ~15s)...`)
-
-    // Download image fully — Pollinations generates on-the-fly so we need GET not HEAD
-    const res = await fetch(url, { signal: AbortSignal.timeout(45000) })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-    const buffer    = Buffer.from(await res.arrayBuffer())
-    const imgDir    = path.join(ROOT, 'public', 'images')
-    const localFile = path.join(imgDir, `${topic.slug}.jpg`)
-    const localUrl  = `/images/${topic.slug}.jpg`
-
-    // Save to public/images/ so Next.js serves it directly
-    if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true })
-    fs.writeFileSync(localFile, buffer)
-
-    console.log(`   ✓ Hero:   Pollinations AI saved → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
-    return {
-      url:     localUrl,
-      heroUrl: localUrl,
-      alt:     `${topic.title} — SpeedUp Infotech Pune`,
-      credit:  'AI Generated Image',
-    }
-  } catch (e) {
-    console.log(`   ⚠️  Pollinations failed (${e.message}) — using stock photo fallback`)
-  }
-
-  return null
+// Category-specific Unsplash fallback images (reliable, topic-relevant)
+const UNSPLASH_HERO_FALLBACKS = {
+  'trending-ai': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=630&fit=crop&q=80',
+  'career':      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=630&fit=crop&q=80',
+  'comparison':  'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop&q=80',
+  'beginner':    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&h=630&fit=crop&q=80',
+  'technical':   'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop&q=80',
 }
 
+async function generateHeroImage(topic) {
+  const imgDir    = path.join(ROOT, 'public', 'images')
+  const localFile = path.join(imgDir, `${topic.slug}.jpg`)
+  const localUrl  = `/images/${topic.slug}.jpg`
+  if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true })
+
+  // ── Attempt 1: Pollinations AI (free, unique per topic) ──────
+  try {
+    const prompt  = buildPollinationsPrompt(topic)
+    const seed    = topic.slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+    const url     = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1200&height=630&seed=${seed}&nologo=true&model=flux`
+
+    console.log(`   ⏳ Trying Pollinations AI...`)
+    const res    = await fetch(url, { signal: AbortSignal.timeout(40000) })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const buffer = Buffer.from(await res.arrayBuffer())
+    if (buffer.length < 5000) throw new Error(`Response too small (${buffer.length}B) — likely rate limited`)
+
+    fs.writeFileSync(localFile, buffer)
+    console.log(`   ✓ Hero:   Pollinations AI → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
+    return { url: localUrl, heroUrl: localUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'AI Generated' }
+  } catch (e) {
+    console.log(`   ⚠️  Pollinations failed (${e.message}) — trying Unsplash...`)
+  }
+
+  // ── Attempt 2: Unsplash topic-specific fallback ───────────────
+  try {
+    const fbUrl  = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
+    const res    = await fetch(fbUrl, { signal: AbortSignal.timeout(15000) })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const buffer = Buffer.from(await res.arrayBuffer())
+    if (buffer.length < 5000) throw new Error(`Response too small`)
+
+    fs.writeFileSync(localFile, buffer)
+    console.log(`   ✓ Hero:   Unsplash fallback → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
+    return { url: localUrl, heroUrl: localUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'Unsplash' }
+  } catch (e) {
+    console.log(`   ⚠️  Unsplash also failed (${e.message}) — using remote URL`)
+  }
+
+  // ── Attempt 3: Return remote Unsplash URL (no download) ──────
+  const remoteUrl = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
+  console.log(`   ✓ Hero:   Remote Unsplash URL (no local copy)`)
+  return { url: remoteUrl, heroUrl: remoteUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'Unsplash' }
+}
 
 async function getImages(topic, state) {
   console.log('\n📸 Step 3: Fetching topic-matched images...')
@@ -385,16 +405,13 @@ async function getImages(topic, state) {
 
   const queries = categoryQueries[topic.category] || categoryQueries['technical']
 
-  // Hero: try Pollinations AI first (free, unique, topic-specific)
-  // Body images: Pexels/Unsplash stock photos (reliable, fast)
-  const pollinationsHero = await generateHeroImage(topic, fbUrl)
-  const heroImg  = pollinationsHero || await fetchImage(queries[0], fbUrl, topic.title, idx % 3)
+  // Hero: Pollinations AI → Unsplash download → Unsplash remote (guaranteed image)
+  const heroImg  = await generateHeroImage(topic)
 
   const bodyImg1 = await fetchImage(queries[1], FALLBACK_POOL[(idx+1) % FALLBACK_POOL.length], topic.keyword, (idx+1) % 4)
   const bodyImg2 = await fetchImage(queries[2], FALLBACK_POOL[(idx+2) % FALLBACK_POOL.length], topic.keyword, (idx+2) % 4)
   const bodyImg3 = await fetchImage(queries[3], FALLBACK_POOL[(idx+3) % FALLBACK_POOL.length], 'SpeedUp Infotech Pune', (idx+3) % 4)
 
-  if (!pollinationsHero) console.log(`   ✓ Hero:   ${heroImg.credit}  ["${queries[0]}")`)
   console.log(`   ✓ Body 1: ${bodyImg1.credit}  ["${queries[1]}")`)
   console.log(`   ✓ Body 2: ${bodyImg2.credit}  ["${queries[2]}")`)
   console.log(`   ✓ Body 3: ${bodyImg3.credit}  ["${queries[3]}")`)
