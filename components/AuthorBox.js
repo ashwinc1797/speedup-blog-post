@@ -129,7 +129,7 @@ export default function AuthorBox({ author, authorBio }) {
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 11, color: '#555', marginBottom: 10,
           }}>
-            📍 {profile.company} · Shivaji Nagar, FC Road, Pune
+            {profile.company} · Shivaji Nagar, FC Road, Pune
           </div>
 
           {/* Bio */}
@@ -162,7 +162,7 @@ export default function AuthorBox({ author, authorBio }) {
               background: '#ffffff08', color: '#444',
               border: '1px solid rgba(255,255,255,0.07)',
             }}>
-              ✅ 500+ Students Trained
+              500+ Students Trained
             </span>
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function AuthorBox({ author, authorBio }) {
           fontSize: 11, color: '#444',
           letterSpacing: '0.05em',
         }}>
-          🎓 Learn <strong style={{ color: '#666' }}>{profile.specialty}</strong> at SpeedUp Infotech Pune
+          Learn <strong style={{ color: '#666' }}>{profile.specialty}</strong> at SpeedUp Infotech Pune
         </span>
         <a
           href="tel:+918904581086"

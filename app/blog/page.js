@@ -89,18 +89,17 @@ export default function BlogPage() {
                 background: '#0A0A0A', display: 'block',
               }}
             >
-              {/* Hero image */}
-              <div style={{ width: '100%', height: 200, overflow: 'hidden', background: '#111', position: 'relative' }}>
+              {/* Hero image — aspect-ratio keeps AI images from stretching */}
+              <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#111', position: 'relative' }}>
                 {post.heroImage ? (
                   <img
                     src={post.heroImage}
                     alt={post.heroImageAlt || post.title}
-                    width={600}
-                    height={200}
                     style={{
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
+                      objectPosition: 'center',
                       display: 'block',
                     }}
                     loading="lazy"

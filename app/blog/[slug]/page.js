@@ -49,13 +49,13 @@ export default function BlogPost() {
       {/* Inject SEO meta tags + JSON-LD schema */}
       <SeoHead post={post} />
 
-      {/* Hero Image */}
+      {/* Hero Image — aspect-ratio prevents stretching of AI-generated images */}
       {post.heroImage && (
-        <div style={{ width: '100%', height: 420, overflow: 'hidden', background: '#111' }}>
+        <div style={{ width: '100%', aspectRatio: '21/9', overflow: 'hidden', background: '#111', maxHeight: 480 }}>
           <img
             src={post.heroImage}
             alt={post.heroImageAlt || post.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
             loading="eager"
           />
         </div>
