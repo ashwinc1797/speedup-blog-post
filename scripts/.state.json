@@ -17,7 +17,8 @@
     "react-19-update-pune",
     "ai-coding-tools-developers-2026",
     "chatgpt-vs-github-copilot-cursor-ai-developers",
-    "trending-ai-technologies-2026"
+    "trending-ai-technologies-2026",
+    "ai-trends-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -35,7 +36,8 @@
     "React 19 update Pune",
     "AI coding tools developers 2026",
     "ChatGPT vs GitHub Copilot developers",
-    "AI technologies 2026"
+    "AI technologies 2026",
+    "AI trends 2026"
   ],
   "publishedPosts": [
     {
@@ -129,8 +131,16 @@
       "keyword": "AI technologies 2026",
       "publishedAt": "2026-05-26T18:06:21.817Z",
       "words": 2929
+    },
+    {
+      "slug": "ai-trends-2026",
+      "title": "Top 5 AI Trends to Watch in 2026 for Aspiring Developers",
+      "category": "trending-ai",
+      "keyword": "AI trends 2026",
+      "publishedAt": "2026-05-26T18:11:52.877Z",
+      "words": 3039
     }
   ],
-  "total": 18,
-  "lastRun": "2026-05-26T18:06:21.817Z"
+  "total": 19,
+  "lastRun": "2026-05-26T18:11:52.877Z"
 }
