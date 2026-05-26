@@ -305,7 +305,7 @@ function buildPollinationsPrompt(topic) {
   return `${subject}, ${style}, high quality, 4K, photorealistic, no text, no watermark, no logo`
 }
 
-// Category-specific Unsplash fallback images (reliable, topic-relevant)
+// Hardcoded Unsplash fallbacks (last resort — no API key needed)
 const UNSPLASH_HERO_FALLBACKS = {
   'trending-ai': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=630&fit=crop&q=80',
   'career':      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=630&fit=crop&q=80',
@@ -320,47 +320,89 @@ async function generateHeroImage(topic) {
   const localUrl  = `/images/${topic.slug}.jpg`
   if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true })
 
-  // ── Attempt 1: Pollinations AI (free, unique per topic) ──────
-  try {
-    const prompt  = buildPollinationsPrompt(topic)
-    const seed    = topic.slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
-    const url     = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1200&height=630&seed=${seed}&nologo=true&model=flux`
-
-    console.log(`   ⏳ Trying Pollinations AI...`)
-    const res    = await fetch(url, { signal: AbortSignal.timeout(40000) })
+  // Shared helper — download any image URL and save locally
+  const saveAndReturn = async (imageUrl, source, fetchOpts = {}) => {
+    const res = await fetch(imageUrl, { signal: AbortSignal.timeout(20000), ...fetchOpts })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
     const buffer = Buffer.from(await res.arrayBuffer())
-    if (buffer.length < 5000) throw new Error(`Response too small (${buffer.length}B) — likely rate limited`)
+    if (buffer.length < 5000) throw new Error(`Too small (${buffer.length}B)`)
+    fs.writeFileSync(localFile, buffer)
+    console.log(`   ✓ Hero:   ${source} → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
+    return { url: localUrl, heroUrl: localUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: source }
+  }
 
+  // ── Attempt 1: Pollinations AI (free, unique, AI-generated) ───
+  try {
+    const prompt = buildPollinationsPrompt(topic)
+    const seed   = topic.slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+    const url    = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1200&height=630&seed=${seed}&nologo=true&model=flux`
+    console.log(`   ⏳ Trying Pollinations AI...`)
+    const res = await fetch(url, { signal: AbortSignal.timeout(40000) })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const buffer = Buffer.from(await res.arrayBuffer())
+    if (buffer.length < 5000) throw new Error(`Too small (${buffer.length}B) — rate limited`)
     fs.writeFileSync(localFile, buffer)
     console.log(`   ✓ Hero:   Pollinations AI → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
-    return { url: localUrl, heroUrl: localUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'AI Generated' }
+    return { url: localUrl, heroUrl: localUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'Pollinations AI' }
   } catch (e) {
-    console.log(`   ⚠️  Pollinations failed (${e.message}) — trying Unsplash...`)
+    console.log(`   ⚠️  Pollinations failed (${e.message}) — trying Pexels...`)
   }
 
-  // ── Attempt 2: Unsplash topic-specific fallback ───────────────
+  // ── Attempt 2: Pexels (topic-specific keyword search) ─────────
+  const pexelsKey = process.env.PEXELS_API_KEY
+  if (pexelsKey) {
+    try {
+      const query  = encodeURIComponent(topic.imageQuery || topic.keyword || 'technology')
+      const search = await fetch(
+        `https://api.pexels.com/v1/search?query=${query}&per_page=5&orientation=landscape`,
+        { headers: { Authorization: pexelsKey }, signal: AbortSignal.timeout(12000) }
+      )
+      if (!search.ok) throw new Error(`Pexels search HTTP ${search.status}`)
+      const data = await search.json()
+      if (!data.photos?.length) throw new Error('No Pexels results')
+      const photo    = data.photos[0]
+      const imageUrl = photo.src.landscape || photo.src.large2x
+      return await saveAndReturn(imageUrl, `Pexels`)
+    } catch (e) {
+      console.log(`   ⚠️  Pexels failed (${e.message}) — trying Unsplash...`)
+    }
+  } else {
+    console.log(`   ℹ️  No PEXELS_API_KEY — skipping Pexels, trying Unsplash...`)
+  }
+
+  // ── Attempt 3: Unsplash (topic-specific keyword search) ───────
+  const unsplashKey = process.env.UNSPLASH_ACCESS_KEY
+  if (unsplashKey) {
+    try {
+      const query  = encodeURIComponent(topic.imageQuery || topic.keyword || 'technology')
+      const search = await fetch(
+        `https://api.unsplash.com/search/photos?query=${query}&per_page=5&orientation=landscape`,
+        { headers: { Authorization: `Client-ID ${unsplashKey}` }, signal: AbortSignal.timeout(12000) }
+      )
+      if (!search.ok) throw new Error(`Unsplash search HTTP ${search.status}`)
+      const data = await search.json()
+      if (!data.results?.length) throw new Error('No Unsplash results')
+      const photo    = data.results[0]
+      const imageUrl = `${photo.urls.regular}&w=1200&h=630&fit=crop&q=80`
+      return await saveAndReturn(imageUrl, `Unsplash`)
+    } catch (e) {
+      console.log(`   ⚠️  Unsplash failed (${e.message}) — using hardcoded fallback...`)
+    }
+  }
+
+  // ── Attempt 4: Hardcoded Unsplash URL (always works, no key) ──
   try {
-    const fbUrl  = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
-    const res    = await fetch(fbUrl, { signal: AbortSignal.timeout(15000) })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-    const buffer = Buffer.from(await res.arrayBuffer())
-    if (buffer.length < 5000) throw new Error(`Response too small`)
-
-    fs.writeFileSync(localFile, buffer)
-    console.log(`   ✓ Hero:   Unsplash fallback → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
-    return { url: localUrl, heroUrl: localUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'Unsplash' }
+    const fbUrl = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
+    return await saveAndReturn(fbUrl, `Unsplash (hardcoded)`)
   } catch (e) {
-    console.log(`   ⚠️  Unsplash also failed (${e.message}) — using remote URL`)
+    console.log(`   ⚠️  All attempts failed — returning remote URL`)
   }
 
-  // ── Attempt 3: Return remote Unsplash URL (no download) ──────
+  // ── Last resort: remote URL only ──────────────────────────────
   const remoteUrl = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
-  console.log(`   ✓ Hero:   Remote Unsplash URL (no local copy)`)
   return { url: remoteUrl, heroUrl: remoteUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'Unsplash' }
 }
+
 
 async function getImages(topic, state) {
   console.log('\n📸 Step 3: Fetching topic-matched images...')
