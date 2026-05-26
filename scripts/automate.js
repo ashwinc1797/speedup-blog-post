@@ -309,28 +309,38 @@ async function generateHeroImage(topic, fallbackUrl) {
   try {
     const prompt  = buildPollinationsPrompt(topic)
     const encoded = encodeURIComponent(prompt)
-    // Use slug as seed for consistency — same topic always gets same image
     const seed    = topic.slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
     const url     = `https://image.pollinations.ai/prompt/${encoded}?width=1200&height=630&seed=${seed}&nologo=true&model=flux`
 
-    // Verify the URL is reachable (Pollinations returns the image directly)
-    const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(8000) })
-    if (res.ok || res.status === 200) {
-      console.log(`   ✓ Hero:   Pollinations AI  (flux model, seed=${seed})`)
-      return {
-        url,
-        heroUrl: url,
-        alt:     `${topic.title} — SpeedUp Infotech Pune`,
-        credit:  'Generated with Pollinations AI',
-      }
+    console.log(`   ⏳ Generating AI hero image (this takes ~15s)...`)
+
+    // Download image fully — Pollinations generates on-the-fly so we need GET not HEAD
+    const res = await fetch(url, { signal: AbortSignal.timeout(45000) })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const buffer    = Buffer.from(await res.arrayBuffer())
+    const imgDir    = path.join(ROOT, 'public', 'images')
+    const localFile = path.join(imgDir, `${topic.slug}.jpg`)
+    const localUrl  = `/images/${topic.slug}.jpg`
+
+    // Save to public/images/ so Next.js serves it directly
+    if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true })
+    fs.writeFileSync(localFile, buffer)
+
+    console.log(`   ✓ Hero:   Pollinations AI saved → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
+    return {
+      url:     localUrl,
+      heroUrl: localUrl,
+      alt:     `${topic.title} — SpeedUp Infotech Pune`,
+      credit:  'AI Generated Image',
     }
   } catch (e) {
     console.log(`   ⚠️  Pollinations failed (${e.message}) — using stock photo fallback`)
   }
 
-  // Fallback to stock photo if Pollinations is down
   return null
 }
+
 
 async function getImages(topic, state) {
   console.log('\n📸 Step 3: Fetching topic-matched images...')
