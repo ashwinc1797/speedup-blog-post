@@ -152,7 +152,7 @@ jobs:
           username: ${{ secrets.NOTIFY_EMAIL }}
           password: ${{ secrets.NOTIFY_EMAIL_PASSWORD }}
           subject: "❌ Blog Automation Failed — SpeedUp Infotech"
-          to: ${{ secrets.NOTIFY_EMAIL }}
+          to: ${{ secrets.NOTIFY_EMAILS }}
           from: SpeedUp Blog Bot
           body: |
             Blog automation failed on ${{ github.run_started_at }}
