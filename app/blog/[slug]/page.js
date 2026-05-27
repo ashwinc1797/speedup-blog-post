@@ -1,260 +1,336 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import SeoHead from './seo-head.js'
+import { notFound } from 'next/navigation'
+import { MDXRemote } from 'next-mdx-remote/rsc'
+import remarkGfm from 'remark-gfm'
 import AuthorBox from '../../../components/AuthorBox.js'
+import { getAllPosts, getPostBySlug } from '../../../lib/blog.js'
 
-export default function BlogPost() {
-  const params   = useParams()
-  const [post, setPost]       = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
+const SITE_URL = 'https://speedupinfotech.com'
+const PHONE = '+918904581086'
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const res  = await fetch(`/api/post/${params.slug}`)
-        if (!res.ok) throw new Error('Post not found')
-        const data = await res.json()
-        setPost(data)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
+function stripOpeningTitle(content) {
+  return content.replace(/^# .+\r?\n+/, '')
+}
+
+function absoluteUrl(url) {
+  if (!url) return undefined
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${SITE_URL}${url.startsWith('/') ? '' : '/'}${url}`
+}
+
+function normalizePost(rawPost) {
+  const fm = rawPost.frontmatter
+  return {
+    slug: rawPost.slug,
+    content: stripOpeningTitle(rawPost.content),
+    title: fm.title || rawPost.slug,
+    description: fm.description || '',
+    date: fm.date || '',
+    lastUpdated: fm.lastUpdated || fm.date || '',
+    author: fm.author || 'SpeedUp Infotech',
+    authorBio: fm.authorBio || '',
+    category: fm.category || 'IT Careers',
+    tags: fm.tags || [],
+    keywords: fm.keywords || [],
+    readTime: fm.readTime || '8 min read',
+    heroImage: fm.heroImage || '',
+    heroImageAlt: fm.heroImageAlt || fm.title || rawPost.slug,
+    canonical: fm.canonical || `${SITE_URL}/blog/${rawPost.slug}`,
+  }
+}
+
+function extractFaqs(content) {
+  const faqs = []
+  const patterns = [
+    /\*\*Q:\s*(.+?)\*\*\s*\n+A:\s*([\s\S]+?)(?=\n+\*\*Q:|\n+##|$)/gi,
+    /^Q:\s*(.+?)\s*\n+A:\s*([\s\S]+?)(?=\n+Q:|\n+##|$)/gim,
+  ]
+
+  for (const pattern of patterns) {
+    let match
+    while ((match = pattern.exec(content)) !== null && faqs.length < 6) {
+      const question = match[1].replace(/[*_`#]/g, '').trim()
+      const answer = match[2]
+        .replace(/!\[[^\]]*]\([^)]+\)/g, '')
+        .replace(/[*_`#>\[\]()]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (question && answer) faqs.push({ question, answer })
     }
-    load()
-  }, [params.slug])
+    if (faqs.length) break
+  }
 
-  if (loading) return (
-    <div style={{ maxWidth: 780, margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
-      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#555' }}>
-        Loading...
-      </div>
-    </div>
-  )
+  return faqs
+}
 
-  if (error || !post) return (
-    <div style={{ maxWidth: 780, margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
-      <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 700, textTransform: 'uppercase', color: '#D92B2B', marginBottom: 8 }}>
-        Post Not Found
-      </div>
-      <a href="/blog" style={{ color: '#888', fontSize: 13 }}>← Back to Blog</a>
-    </div>
-  )
+function buildSchemas(post, faqs) {
+  const image = absoluteUrl(post.heroImage)
+  const schemas = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description: post.description,
+      datePublished: post.date,
+      dateModified: post.lastUpdated || post.date,
+      author: {
+        '@type': 'Person',
+        name: post.author,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'SpeedUp Infotech',
+        url: SITE_URL,
+      },
+      image,
+      url: post.canonical,
+      keywords: post.keywords.join(', '),
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': post.canonical,
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE_URL}/blog` },
+        { '@type': 'ListItem', position: 3, name: post.title, item: post.canonical },
+      ],
+    },
+  ]
+
+  if (faqs.length) {
+    schemas.push({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map(({ question, answer }) => ({
+        '@type': 'Question',
+        name: question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: answer,
+        },
+      })),
+    })
+  }
+
+  return schemas
+}
+
+function serializeJsonLd(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c')
+}
+
+const mdxComponents = {
+  h1: props => <h2 className="article-h2" {...props} />,
+  h2: props => <h2 className="article-h2" {...props} />,
+  h3: props => <h3 className="article-h3" {...props} />,
+  p: props => <p className="article-p" {...props} />,
+  ul: props => <ul className="article-list" {...props} />,
+  ol: props => <ol className="article-list article-list-numbered" {...props} />,
+  li: props => <li className="article-li" {...props} />,
+  blockquote: props => <blockquote className="article-quote" {...props} />,
+  strong: props => <strong className="article-strong" {...props} />,
+  em: props => <em className="article-em" {...props} />,
+  a: ({ href = '', ...props }) => {
+    const external = href.startsWith('http://') || href.startsWith('https://')
+    return (
+      <a
+        className="article-link"
+        href={href}
+        target={external ? '_blank' : undefined}
+        rel={external ? 'noopener noreferrer' : undefined}
+        {...props}
+      />
+    )
+  },
+  img: ({ src = '', alt = '' }) => (
+    <img
+      className="article-image"
+      src={src}
+      alt={alt}
+      loading="lazy"
+    />
+  ),
+  code: props => <code className="article-code" {...props} />,
+  pre: props => <pre className="article-pre" {...props} />,
+  table: props => <div className="article-table-wrap"><table className="article-table" {...props} /></div>,
+}
+
+export function generateStaticParams() {
+  return getAllPosts().map(post => ({ slug: post.slug }))
+}
+
+export function generateMetadata({ params }) {
+  const rawPost = getPostBySlug(params.slug)
+  if (!rawPost) return {}
+
+  const post = normalizePost(rawPost)
+  const image = absoluteUrl(post.heroImage)
+
+  return {
+    title: post.title,
+    description: post.description,
+    keywords: post.keywords,
+    authors: [{ name: post.author }],
+    alternates: {
+      canonical: post.canonical,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.description,
+      type: 'article',
+      url: post.canonical,
+      siteName: 'SpeedUp Infotech',
+      locale: 'en_IN',
+      publishedTime: post.date || undefined,
+      modifiedTime: post.lastUpdated || undefined,
+      authors: [post.author],
+      images: image ? [{ url: image, alt: post.heroImageAlt }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      images: image ? [image] : [],
+    },
+  }
+}
+
+export default function BlogPost({ params }) {
+  const rawPost = getPostBySlug(params.slug)
+  if (!rawPost) notFound()
+
+  const post = normalizePost(rawPost)
+  const faqs = extractFaqs(post.content)
+  const schemas = buildSchemas(post, faqs)
 
   return (
     <main>
-      {/* Inject SEO meta tags + JSON-LD schema */}
-      <SeoHead post={post} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(schemas) }}
+      />
 
-      {/* Hero Image — aspect-ratio prevents stretching of AI-generated images */}
       {post.heroImage && (
-        <div style={{ width: '100%', aspectRatio: '21/9', overflow: 'hidden', background: '#111', maxHeight: 480 }}>
+        <div className="blog-hero-image">
           <img
             src={post.heroImage}
-            alt={post.heroImageAlt || post.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+            alt={post.heroImageAlt}
             loading="eager"
           />
         </div>
       )}
 
-      <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 48, paddingTop: 40 }}>
-
-          {/* ── ARTICLE ──────────────────────────────────── */}
+      <div className="blog-post-wrap">
+        <div className="blog-post-grid">
           <article>
+            <nav className="blog-breadcrumb" aria-label="Breadcrumb">
+              <a href="/">Home</a>
+              <span>/</span>
+              <a href="/blog">Blog</a>
+              <span>/</span>
+              <span>{post.title.slice(0, 44)}{post.title.length > 44 ? '...' : ''}</span>
+            </nav>
 
-            {/* Breadcrumb */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: 12, color: '#555' }}>
-              <a href="/" style={{ color: '#555' }}>Home</a>
-              <span>›</span>
-              <a href="/blog" style={{ color: '#555' }}>Blog</a>
-              <span>›</span>
-              <span style={{ color: '#888' }}>{post.title?.slice(0, 40)}...</span>
+            <div className="blog-meta-row">
+              <span className="blog-category-pill">{post.category}</span>
+              {post.date && <span>{post.date}</span>}
+              <span>{post.readTime}</span>
             </div>
 
-            {/* Meta row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
-              <span style={{
-                fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700,
-                letterSpacing: '0.1em', textTransform: 'uppercase',
-                color: '#D92B2B', border: '1px solid rgba(217,43,43,0.3)', padding: '2px 8px',
-              }}>{post.category || 'IT Careers'}</span>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#444' }}>{post.date}</span>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: '#444' }}>{post.readTime}</span>
+            <h1 className="blog-post-title">{post.title}</h1>
 
-            </div>
-
-            {/* Title */}
-            <h1 style={{
-              fontFamily: "'Barlow Condensed',sans-serif",
-              fontWeight: 900, fontSize: 'clamp(26px,4vw,42px)',
-              textTransform: 'uppercase', letterSpacing: '-0.5px',
-              lineHeight: 1.1, marginBottom: 18, color: '#fff',
-            }}>{post.title}</h1>
-
-            {/* Description */}
             {post.description && (
-              <p style={{
-                fontSize: 16, color: '#888', lineHeight: 1.7, marginBottom: 28,
-                borderLeft: '3px solid #D92B2B', paddingLeft: 14, fontWeight: 300,
-              }}>{post.description}</p>
+              <p className="blog-post-description">{post.description}</p>
             )}
 
-            {/* Article body */}
-            <div
-              className="article-body"
-              style={{ fontSize: 15, lineHeight: 1.8, color: 'rgba(255,255,255,0.75)' }}
-              dangerouslySetInnerHTML={{ __html: post.htmlContent }}
-            />
+            <div className="article-body">
+              <MDXRemote
+                source={post.content}
+                components={mdxComponents}
+                options={{
+                  mdxOptions: {
+                    remarkPlugins: [remarkGfm],
+                  },
+                }}
+              />
+            </div>
 
-            {/* Author Box — E-E-A-T signal for Google */}
             <AuthorBox author={post.author} authorBio={post.authorBio} />
 
-            {/* Internal links section */}
-            <div style={{
-              marginTop: 40, padding: '20px',
-              background: '#111', border: '1px solid rgba(255,255,255,0.07)',
-            }}>
-              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555', marginBottom: 12 }}>
+            <section className="related-courses" aria-labelledby="related-courses-title">
+              <div id="related-courses-title" className="sidebar-title">
                 Related Courses at SpeedUp Infotech
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              <div className="related-course-grid">
                 {[
                   ['MERN Stack Course', '/mern-stack-course-pune'],
                   ['Full Stack Course', '/full-stack-developer-course-pune'],
                   ['Data Analytics Course', '/data-analytics-course-pune'],
                   ['Python Full Stack', '/python-full-stack-course-pune'],
-                  ['AI & ML Course', '/ai-course-pune'],
+                  ['AI and ML Course', '/ai-course-pune'],
                   ['React JS Course', '/react-js-course-pune'],
                 ].map(([name, href]) => (
-                  <a key={name} href={href} style={{
-                    display: 'block', padding: '8px 10px',
-                    background: '#0A0A0A', border: '1px solid rgba(255,255,255,0.07)',
-                    fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11,
-                    fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
-                    color: '#D92B2B', textDecoration: 'none',
-                  }}>{name} →</a>
+                  <a key={name} href={href}>{name}</a>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Tags */}
-            {post.tags?.length > 0 && (
-              <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-                <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555', marginBottom: 10 }}>
-                  Tags
+            {post.tags.length > 0 && (
+              <section className="blog-tags" aria-label="Tags">
+                <div className="sidebar-title">Tags</div>
+                <div>
+                  {post.tags.map(tag => <span key={tag}>{tag}</span>)}
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {post.tags.map(tag => (
-                    <span key={tag} style={{
-                      fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700,
-                      letterSpacing: '0.06em', textTransform: 'uppercase',
-                      padding: '3px 9px', border: '1px solid rgba(255,255,255,0.1)', color: '#555',
-                    }}>{tag}</span>
-                  ))}
-                </div>
-              </div>
+              </section>
             )}
 
-            {/* CTA */}
-            <div style={{
-              marginTop: 40, background: '#000',
-              border: '1px solid rgba(217,43,43,0.25)', padding: '28px', textAlign: 'center',
-            }}>
-              <div style={{
-                fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: 22,
-                textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8,
-              }}>
-                Ready to Start Your <span style={{ color: '#D92B2B' }}>IT Career</span> in Pune?
+            <section className="article-cta">
+              <h2>Ready to Start Your <span>IT Career</span> in Pune?</h2>
+              <p>Book a free demo class at SpeedUp Infotech, Shivaji Nagar, FC Road, Pune.</p>
+              <div>
+                <a href={`tel:${PHONE}`} className="article-cta-primary">Call Now</a>
+                <a href="/contact" className="article-cta-secondary">Book Free Demo</a>
               </div>
-              <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
-                Book a free demo class at SpeedUp Infotech — Shivaji Nagar, FC Road, Pune
-              </p>
-              <a href="tel:+918904581086" style={{
-                background: '#D92B2B', color: '#fff', padding: '12px 28px',
-                fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700,
-                fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase',
-                display: 'inline-block', marginRight: 10,
-              }}>
-                📞 Call Now
-              </a>
-              <a href="/contact" style={{
-                color: '#fff', padding: '12px 28px',
-                border: '1px solid rgba(255,255,255,0.2)',
-                fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700,
-                fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase',
-                display: 'inline-block',
-              }}>
-                Book Free Demo →
-              </a>
-            </div>
+            </section>
           </article>
 
-          {/* ── SIDEBAR ──────────────────────────────────── */}
-          <aside style={{ paddingTop: 4 }}>
-
-            {/* Post info */}
-            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', padding: 16, marginBottom: 14 }}>
-              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555', marginBottom: 12 }}>
-                Post Info
-              </div>
+          <aside className="blog-sidebar">
+            <section className="sidebar-card">
+              <div className="sidebar-title">Post Info</div>
               {[
-                ['Author', post.author || 'SpeedUp Infotech'],
+                ['Author', post.author],
                 ['Published', post.date],
                 ['Read time', post.readTime],
                 ['Category', post.category],
-              ].map(([l, v]) => (
-                <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 12 }}>
-                  <span style={{ color: '#555' }}>{l}</span>
-                  <span style={{ color: '#888', fontFamily: "'JetBrains Mono',monospace", fontSize: 11 }}>{v}</span>
+              ].filter(([, value]) => value).map(([label, value]) => (
+                <div key={label} className="sidebar-row">
+                  <span>{label}</span>
+                  <strong>{value}</strong>
                 </div>
               ))}
-            </div>
+            </section>
 
-            {/* Keywords */}
-            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', padding: 16, marginBottom: 14 }}>
-              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555', marginBottom: 10 }}>
-                Keywords Covered
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {(post.keywords || []).slice(0, 5).map(kw => (
-                  <div key={kw} style={{ fontSize: 11, color: '#D92B2B', fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 600 }}>
-                    # {kw}
-                  </div>
-                ))}
-              </div>
-            </div>
+            {post.keywords.length > 0 && (
+              <section className="sidebar-card">
+                <div className="sidebar-title">Keywords Covered</div>
+                <div className="keyword-list">
+                  {post.keywords.slice(0, 6).map(keyword => (
+                    <span key={keyword}># {keyword}</span>
+                  ))}
+                </div>
+              </section>
+            )}
 
-            {/* CTA box */}
-            <div style={{ background: '#D92B2B', padding: 16, textAlign: 'center' }}>
-              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: 16, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
-                Free Demo Class
-              </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginBottom: 14, lineHeight: 1.5 }}>
-                SpeedUp Infotech<br/>Shivaji Nagar, Pune
-              </div>
-              <a href="tel:+918904581086" style={{
-                display: 'block', background: '#000', color: '#fff',
-                padding: '9px', fontFamily: "'Barlow Condensed',sans-serif",
-                fontWeight: 700, fontSize: 12, letterSpacing: '0.08em',
-                textTransform: 'uppercase', textDecoration: 'none',
-              }}>
-                +91 89045 81086
-              </a>
-            </div>
+            <section className="sidebar-demo">
+              <div>Free Demo Class</div>
+              <p>SpeedUp Infotech<br />Shivaji Nagar, Pune</p>
+              <a href={`tel:${PHONE}`}>+91 89045 81086</a>
+            </section>
 
-            {/* Back link */}
-            <a href="/blog" style={{
-              display: 'block', marginTop: 10, padding: '10px 14px',
-              border: '1px solid rgba(255,255,255,0.07)',
-              fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 700,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              color: '#555', textAlign: 'center',
-            }}>← Back to Blog</a>
+            <a href="/blog" className="back-to-blog">Back to Blog</a>
           </aside>
         </div>
       </div>

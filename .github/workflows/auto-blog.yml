@@ -55,6 +55,7 @@ jobs:
           echo "📂 MDX files before: $MDX_COUNT_BEFORE"
 
           node scripts/automate.js 2>&1 | tee output.log
+          node scripts/sync-sitemap.js
 
           # Check if the script exited with error
           if grep -q "✗ Fatal:" output.log; then
@@ -126,7 +127,7 @@ jobs:
                  </tr>
               </table>
               <div style="text-align:center;margin-bottom:20px">
-                <a href="https://speedupinfotech.com/blogs/${{ steps.blog.outputs.slug }}"
+                <a href="https://speedupinfotech.com/blog/${{ steps.blog.outputs.slug }}"
                    style="background:#D92B2B;color:#fff;padding:12px 28px;text-decoration:none;font-weight:bold;font-size:14px;letter-spacing:1px;text-transform:uppercase">
                   VIEW BLOG POST →
                 </a>

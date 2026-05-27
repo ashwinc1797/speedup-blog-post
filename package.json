@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "blog:generate": "node scripts/automate.js",
-    "blog:keywords": "node scripts/keywords.js",
+    "blog:sitemap": "node scripts/sync-sitemap.js",
+    "blog:fix-images": "node scripts/fix-images.js",
     "blog:test": "node scripts/test-run.js"
   },
   "dependencies": {

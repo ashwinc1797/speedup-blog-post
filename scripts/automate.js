@@ -1,15 +1,14 @@
 // ============================================================
-//  SpeedUp Infotech — Full Blog Automation Engine
+//  SpeedUp Infotech - Full Blog Automation Engine
 //  Auto keyword research + trending AI/tech topics
-//  Images: Pexels (primary) → Unsplash → hardcoded fallback
+//  Images: Pexels (primary) -> Unsplash -> hardcoded fallback
 //  AI: Groq Llama 3.3 70B
-//  Runs: GitHub Actions Mon/Wed/Fri 6AM IST
+//  Runs: GitHub Actions Mon/Tue/Thu/Sat 6AM IST
 // ============================================================
 
 import fs   from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { execSync } from 'child_process'
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url))
 const ROOT       = path.join(__dirname, '..')
@@ -66,6 +65,83 @@ function pickAuthor(state) {
 //   70B (llama-3.3-70b-versatile)   → blog writing      (premium quality content)
 const MODEL_RESEARCH = 'llama-3.1-8b-instant'
 const MODEL_WRITE    = 'llama-3.3-70b-versatile'
+
+const TRUSTED_SOURCE_GUIDE = [
+  {
+    name: 'React 19 official release notes',
+    url: 'https://react.dev/blog/2024/12/05/react-19',
+    useWhen: 'React 19, frontend development, server components, React actions',
+    facts: [
+      'React 19 stable was announced on December 5, 2024.',
+      'React 19 includes Actions, useActionState, useOptimistic, the use API, and improvements for Server Components.',
+    ],
+  },
+  {
+    name: 'React documentation',
+    url: 'https://react.dev',
+    useWhen: 'React features, hooks, migration guidance',
+    facts: [
+      'Use official React docs for feature names and examples.',
+      'Do not describe React 19 as a 2026 release.',
+    ],
+  },
+  {
+    name: 'Stack Overflow Developer Survey',
+    url: 'https://survey.stackoverflow.co/',
+    useWhen: 'developer tool usage and broad developer trends',
+    facts: [
+      'Use for broad developer ecosystem trends only.',
+      'Do not invent exact percentages unless the exact survey page is linked and the number is present there.',
+    ],
+  },
+  {
+    name: 'NASSCOM reports',
+    url: 'https://nasscom.in/knowledge-center/publications',
+    useWhen: 'India tech industry trends',
+    facts: [
+      'Use cautious India-level technology market language.',
+      'Do not invent exact market size, CAGR, or job counts unless verified from a specific report.',
+    ],
+  },
+  {
+    name: 'LinkedIn Jobs',
+    url: 'https://www.linkedin.com/jobs/',
+    useWhen: 'live hiring demand examples',
+    facts: [
+      'Use only as a place readers can verify current job postings.',
+      'Avoid precise job-count claims unless checked on the day of publishing.',
+    ],
+  },
+  {
+    name: 'Glassdoor India',
+    url: 'https://www.glassdoor.co.in/Salaries/index.htm',
+    useWhen: 'salary ranges',
+    facts: [
+      'Use salary ranges as estimates, not guarantees.',
+      'Mention that salaries vary by company, project portfolio, interview performance, and current market demand.',
+    ],
+  },
+]
+
+const HUMAN_REVIEW_RULES = [
+  'Remove AI process artifacts such as "we will continue", "in this article we will", "stay tuned", and placeholder bracket text.',
+  'Keep the voice practical and locally useful for Pune students. Use concrete examples, but do not invent named client projects, placements, company migrations, ratings, or survey numbers.',
+  'Replace absolute claims with cautious wording unless a trusted source URL is included nearby.',
+  'For salaries, provide broad ranges and explain the assumptions. Never guarantee packages.',
+  'Add a short "Sources and further reading" section with 3-5 links from the trusted source guide when the article includes trend, salary, framework, or market claims.',
+  'Make the article read like an institute trainer edited it: direct, helpful, less repetitive, and no keyword stuffing.',
+]
+
+const BLOCKED_CONTENT_PATTERNS = [
+  { label: 'AI continuation artifact', regex: /\b(we will continue|stay tuned|in the next part|second half of this|this detailed blog post)\b/i },
+  { label: 'Prompt placeholder leaked', regex: /\[[^\]]*(?:write|sentence|word|conclusion|answer|source|number|range)[^\]]*]/i },
+  { label: 'Mojibake characters', regex: /â|ðŸ|�/ },
+  { label: 'Fake exact CAGR or market-size wording', regex: /\b(?:CAGR|market size|expected to reach|job opportunities)\b[^.]*\b(?:according to|NASSCOM|LinkedIn|Glassdoor)\b/i },
+  { label: 'Unsupported company adoption claim', regex: /\b(?:has migrated|have migrated|already adopted|is using React 19|uses React 19 to power)\b/i },
+  { label: 'React 19 wrong release year', regex: /\bReact 19\b[^.]{0,80}\breleased in 2026\b/i },
+]
+
+const REQUIRED_SOURCE_SECTION = /## Sources and further reading/i
 
 async function groq(system, user, model = MODEL_WRITE, retries = 3, maxTokens = 1800) {
   const key = process.env.GROQ_API_KEY
@@ -469,15 +545,15 @@ async function writePost(topic, images, state) {
   const today      = new Date().toISOString().split('T')[0]
   const author     = pickAuthor(state)
 
-  const system = `You are ${author.name}, a ${author.bio}. You specialise in ${author.specialty}. You write Google E-E-A-T compliant blog content for SpeedUp Infotech that demonstrates real Experience, Expertise, Authority, and Trust. Your writing:
-- Cites specific data sources (mention "According to Stack Overflow 2025 survey", "LinkedIn Jobs data", "Glassdoor India", "NASSCOM report" etc.)
-- Includes specific named tools, companies, technologies (not vague generics)
-- Mentions real Pune IT companies hiring: Persistent, Zensar, Infosys BPO, TCS, Cybage, Accenture, KPIT, Synechron
-- Adds trust signals: specific batch sizes, student outcomes, years of experience
-- Uses authoritative language: "In our experience training 500+ students...", "Industry data shows..."
-- Refers to your own background: "Having worked at ${author.background} before joining SpeedUp Infotech..."
-- Connects to salary data with sources and reasoning
-- Always based in Pune context: Shivaji Nagar, FC Road, Hinjewadi, Deccan, Baner`
+  const system = `You are ${author.name}, a ${author.bio}. You specialise in ${author.specialty}. You write practical, people-first blog content for SpeedUp Infotech students in Pune.
+Your draft should be highly humanized, written at a 10th-grade English reading level, and useful before it is promotional:
+- Use a conversational, friendly, and highly humanized tone. Avoid robotic AI buzzwords like "unleash," "landscape," "realm," "delve," "tapestry," "moreover," and "furthermore."
+- Write short, punchy sentences. Break up long paragraphs. Explain technical ideas clearly with examples a fresher can easily understand.
+- Mention real Pune IT areas and companies only as general job-market context.
+- Do not invent source names, exact survey numbers, company adoption stories, ratings, placements, or salary guarantees.
+- Use cautious wording for salaries and hiring demand unless a source URL is included.
+- Include trainer-style experience from ${author.background}, but keep it credible and specific to classroom guidance.
+- Always write for Pune context: Shivaji Nagar, FC Road, Hinjewadi, Deccan, Baner.`
 
   // CALL 1 — First 1000 words (70B model for premium quality)
   console.log(`   Writing Part 1 (~1000 words) with ${MODEL_WRITE}...`)
@@ -502,15 +578,15 @@ ${isTrending ? `This is a TRENDING AI/TECH topic. Structure it as:
 4. ## Why It Matters for IT Careers in Pune (250 words) — Shivaji Nagar, FC Road context
 5. ## Key Details and Breakdown (300 words) — facts, numbers, salary Rs X-Y LPA`}
 
-CRITICAL RULES FOR E-E-A-T COMPLIANCE:
+CRITICAL RULES FOR PEOPLE-FIRST SEO:
 - MINIMUM 1000 words for Part 1 — write fully detailed paragraphs, never cut short
 - Each section must have AT LEAST 3 full paragraphs
 - Write like an expert practitioner — specific, authoritative, experience-based
 - NO bullet points in main sections — only flowing paragraphs
 - EXPERIENCE: Include phrases like "In our experience training 500+ students at SpeedUp Infotech..."
 - EXPERTISE: Use specific technical terms, version numbers, real tool names (GitHub Copilot, Cursor AI, ChatGPT-4o etc.)
-- AUTHORITY: Cite sources — "According to Stack Overflow Developer Survey 2025", "LinkedIn Jobs India data shows", "NASSCOM 2026 report"
-- TRUST: Add salary data with reasoning — "Freshers at Persistent Pune earn Rs X LPA because..."
+- AUTHORITY: Only cite a source if you can name a real source URL later in the article. Do not invent exact survey numbers.
+- TRUST: Give salary ranges as estimates with assumptions, not promises.
 - Mention Pune companies by name: Persistent, Zensar, KPIT, Cybage, Synechron, Accenture Pune
 - Mention Pune 4-5 times (Shivaji Nagar, FC Road, Hinjewadi, Deccan, Baner)
 - Do NOT write a conclusion
@@ -546,15 +622,15 @@ Salary Rs X-Y LPA. Companies: TCS, Infosys, Wipro, Persistent, Cognizant. Job ro
 Concrete steps. Timeline. What to build.`}
 
 ## Why SpeedUp Infotech is the Best Place to Learn in Pune (150 words)
-Write as Rahul Deshmukh (senior trainer). Include: 8+ years industry experience, batch size (20-25 students max), real project portfolio, 100% placement support, ${ADDR}, call ${PHONE}. Mention 3-4 specific companies where SpeedUp students got placed.
+Write as ${author.name}, not a different trainer. Include small batches, real project portfolio, placement preparation, ${ADDR}, and call ${PHONE}. Do not invent placement company names, ratings, or guaranteed packages.
 
 ## Frequently Asked Questions
 
 **Q: ${isTrending ? `How is this topic changing IT jobs in Pune in 2026?` : `How long does it take to learn ${topic.keyword.split(' ')[0]} from scratch?`}**
-A: [Write 3-4 detailed sentences. Include specific numbers, timeframes, and cite "According to LinkedIn Jobs India" or "NASSCOM data". Mention salary impact in Pune specifically with Rs X-Y LPA range.]
+A: [Write 3-4 detailed sentences. Use cautious salary or demand language. Mention that readers should verify current openings on LinkedIn Jobs or company career pages.]
 
 **Q: ${isTrending ? 'Which Pune companies are actively hiring for this skill in 2026?' : `Is ${topic.keyword.split(' ').slice(0,3).join(' ')} worth learning for freshers in Pune?`}**
-A: [3-4 sentences naming specific Pune companies: Persistent Systems, Zensar, KPIT, Cybage, Synechron. Include salary ranges Rs X-Y LPA for freshers vs experienced. Add "SpeedUp Infotech students have been placed at..."]
+A: [3-4 sentences naming specific Pune companies as examples of employers in the region. Do not claim they are currently hiring for this exact skill unless framed as something readers should verify.]
 
 **Q: Does SpeedUp Infotech cover this in their courses?**
 A: Yes, SpeedUp Infotech at Shivaji Nagar, Pune covers this comprehensively with hands-on projects and real industry assignments. Our students have been placed at Persistent Systems, Zensar Technologies, and Cybage with packages from Rs 3.5-10 LPA. With 500+ placements and 4.8★ Justdial rating, we are Pune's most trusted IT training institute. Call ${PHONE} to know the latest batch schedule.
@@ -566,10 +642,11 @@ A: [3-4 sentences with specific salary ranges: fresher Rs X-Y LPA, 1-2 years Rs 
 
 Book a free demo class at SpeedUp Infotech, ${ADDR} — call ${PHONE}. New batch starting soon — limited seats.
 
-CRITICAL RULES FOR E-E-A-T:
+CRITICAL RULES FOR PEOPLE-FIRST SEO:
 - MINIMUM 1000 words for Part 2
-- TRUST: Every salary claim must have reasoning or a source mention
-- AUTHORITY: Use "According to [source]" at least 3 times
+- Do not claim specific SpeedUp placements, Justdial ratings, or packages unless they are verified in the source guide.
+- TRUST: Salary claims must be broad estimates with assumptions, never guarantees
+- AUTHORITY: Do not fake citations. Mention sources only as places readers can verify current data unless you include a real URL.
 - EXPERIENCE: Include at least 1 student/trainer experience reference
 - FAQ answers must be 4+ sentences each — detailed and specific
 - Conclusion must be at least 120 words
@@ -589,6 +666,137 @@ CRITICAL RULES FOR E-E-A-T:
 }
 
 // ── STEP 5: BUILD FINAL MDX ───────────────────────────────────
+function sourceGuideForTopic(topic) {
+  const text = `${topic.title} ${topic.keyword} ${topic.category}`.toLowerCase()
+  const selected = TRUSTED_SOURCE_GUIDE.filter(source => {
+    const scope = `${source.name} ${source.useWhen}`.toLowerCase()
+    return text.includes('react') && scope.includes('react')
+      || text.includes('salary') && scope.includes('salary')
+      || text.includes('career') && /salary|jobs|nasscom|stackoverflow/i.test(scope)
+      || text.includes('ai') && /nasscom|stackoverflow|jobs/i.test(scope)
+      || text.includes('ml') && /nasscom|stackoverflow|jobs/i.test(scope)
+  })
+
+  const fallback = TRUSTED_SOURCE_GUIDE.filter(source =>
+    ['Stack Overflow Developer Survey', 'LinkedIn Jobs', 'Glassdoor India'].includes(source.name)
+  )
+
+  return [...new Map([...(selected.length ? selected : fallback), ...fallback].map(source => [source.name, source])).values()]
+}
+
+function stripModelFences(text) {
+  return text
+    .replace(/^```(?:md|markdown)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim()
+}
+
+function normalizeEditorialText(text) {
+  return stripModelFences(text)
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{4,}/g, '\n\n\n')
+    .replace(/â€”/g, '-')
+    .replace(/â€“/g, '-')
+    .replace(/â˜…/g, 'star')
+    .replace(/ðŸ[^\s]*/g, '')
+    .trim()
+}
+
+function contentQualityIssues(content, topic) {
+  const issues = []
+  const plain = content.replace(/```[\s\S]*?```/g, '')
+  const wordCount = plain.split(/\s+/).filter(Boolean).length
+
+  if (wordCount < 1200) issues.push(`Article is too short after editing (${wordCount} words).`)
+  if (!/^#\s+/m.test(content)) issues.push('Missing one H1 title.')
+  if (!/## Frequently Asked Questions/i.test(content)) issues.push('Missing FAQ section.')
+  if (!REQUIRED_SOURCE_SECTION.test(content)) issues.push('Missing "Sources and further reading" section.')
+  if (!/https?:\/\//i.test(content)) issues.push('No source URLs found.')
+  if (!/SpeedUp Infotech/i.test(content)) issues.push('Missing SpeedUp Infotech context.')
+
+  for (const { label, regex } of BLOCKED_CONTENT_PATTERNS) {
+    if (regex.test(content)) issues.push(label)
+  }
+
+  if (/according to/i.test(content) && !/https?:\/\//i.test(content)) {
+    issues.push('Uses "according to" language without source URLs.')
+  }
+
+  if (/\b(?:guaranteed|guarantees|100% placement guarantee|assured job)\b/i.test(content)) {
+    issues.push('Contains placement or job guarantee language.')
+  }
+
+  if (/\bReact\s+19\b/i.test(`${topic.title} ${topic.keyword}`) && !/2024\/12\/05\/react-19/i.test(content)) {
+    issues.push('React 19 article must link the official December 5, 2024 release notes.')
+  }
+
+  const speedupMentions = (plain.match(/SpeedUp Infotech/gi) || []).length
+  if (speedupMentions > 10) issues.push(`Possible promotional stuffing: SpeedUp Infotech mentioned ${speedupMentions} times.`)
+
+  return issues
+}
+
+async function humanizeAndFactCheckPost(topic, draftBody, state) {
+  console.log('\nStep 5: Humanizing and fact-checking draft...')
+
+  const author = pickAuthor(state)
+  const sourceGuide = sourceGuideForTopic(topic)
+  let edited = draftBody
+  let issues = []
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const sourceText = sourceGuide.map(source =>
+      `- ${source.name}: ${source.url}\n  Use when: ${source.useWhen}\n  Facts: ${source.facts.join(' ')}`
+    ).join('\n')
+
+    const repairNote = issues.length
+      ? `\n\nThe previous edit still had these QA failures. Fix them all:\n- ${issues.join('\n- ')}`
+      : ''
+
+    const prompt = `Edit this generated Markdown article before publication.
+
+Topic: ${topic.title}
+Primary keyword: ${topic.keyword}
+Author persona: ${author.name} - ${author.specialty}
+Location context: ${ADDR}
+
+Trusted source guide:
+${sourceText}
+
+Editorial rules:
+${HUMAN_REVIEW_RULES.map(rule => `- ${rule}`).join('\n')}
+
+Fact-check rules:
+- Do not invent exact statistics, company adoption stories, salary guarantees, ratings, or placement outcomes.
+- Keep salary ranges broad and explain assumptions.
+- If a claim cannot be verified from the source guide, rewrite it as cautious guidance or remove it.
+- For React 19, state that stable React 19 was announced on December 5, 2024, and link the official React source.
+- Preserve valid Markdown only. Do not return frontmatter. Do not explain your changes.
+${repairNote}
+
+Draft Markdown:
+${edited}`
+
+    edited = normalizeEditorialText(await groq(
+      'You are a strict senior editor, SEO reviewer, and fact-checker. Return only the final publishable Markdown article.',
+      prompt,
+      MODEL_WRITE,
+      2,
+      5000
+    ))
+
+    issues = contentQualityIssues(edited, topic)
+    if (issues.length === 0) {
+      console.log(`   Editorial QA passed on attempt ${attempt}`)
+      return { fullBody: edited, qaIssues: [], qaPassed: true }
+    }
+
+    console.log(`   Editorial QA attempt ${attempt} found: ${issues.join('; ')}`)
+  }
+
+  throw new Error(`Content QA failed. Not publishing: ${issues.join('; ')}`)
+}
+
 function buildMdx(topic, images, fullBody, today, state) {
   // Extract description from first paragraph
   const lines       = fullBody.split('\n').filter(l => l.trim() && !l.startsWith('#'))
@@ -741,22 +949,25 @@ async function main() {
   const images = await getImages(topic, state)
 
   // 4. Write 2000-word post
-  const { fullBody, totalWords, today } = await writePost(topic, images, state)
+  const { fullBody: draftBody, totalWords, today } = await writePost(topic, images, state)
 
-  // 5. Build MDX
+  // 5. Humanize, fact-check, and quality-gate the post before publishing
+  const { fullBody, qaPassed } = await humanizeAndFactCheckPost(topic, draftBody, state)
+
+  // 6. Build MDX
   const content  = buildMdx(topic, images, fullBody, today, state)
   const finalWc  = content.split(/\s+/).length
 
-  // 6. Save file
+  // 7. Save file
   const filename = saveMdx(topic, content)
 
-  // 7. Update sitemap
+  // 8. Update sitemap
   updateSitemap(topic.slug)
 
-  // 8. Save social content
+  // 9. Save social content
   saveSocialContent(topic)
 
-  // 9. Update state
+  // 10. Update state
   if (!state.usedSlugs)    state.usedSlugs    = []
   if (!state.usedKeywords) state.usedKeywords  = []
   state.usedSlugs.push(topic.slug)
@@ -769,15 +980,16 @@ async function main() {
     keyword:     topic.keyword,
     publishedAt: new Date().toISOString(),
     words:       finalWc,
+    qaPassed,
   })
   state.total   = (state.total || 0) + 1
   state.lastRun = new Date().toISOString()
   saveState(state)
 
-  // 10. Git push
+  // 11. Git push
   gitPush(topic.slug, filename)
 
-  // 11. Ping search engines
+  // 12. Ping search engines
   await pingSearchEngines(topic.slug)
 
   console.log('\n══════════════════════════════════════════════════════')

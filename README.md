@@ -1,114 +1,110 @@
-# SpeedUp Infotech — Blog Automation Test Site
+# SpeedUp Infotech Blog Automation
 
-A complete Next.js website with fully automated blog publishing powered by:
-- **Gemini 1.5 Flash** — AI blog writing (FREE)
-- **Pollinations.ai** — Hero image generation (FREE, no key needed)
-- **Unsplash API** — In-content photos (FREE)
-- **GitHub Actions** — Auto-schedule Mon/Wed/Fri 6AM IST (FREE)
-- **Vercel** — Hosting & deployment (FREE)
+Next.js blog site for SpeedUp Infotech with automated SEO post generation.
 
-**Total cost: ₹0/month**
+The app uses:
 
----
+- Next.js 14 App Router for the website
+- MDX files in `content/blog/` as the blog source
+- Groq Llama models for keyword research and article writing
+- Pollinations, Pexels, Unsplash, and hardcoded fallbacks for images
+- GitHub Actions for scheduled publishing
+- Vercel or any Next.js host for deployment
 
-## Quick Start (5 steps)
+## Quick Start
 
-### Step 1 — Get your free Gemini API key
-1. Go to: https://aistudio.google.com/app/apikey
-2. Sign in with Google
-3. Click "Create API Key"
-4. Copy the key (starts with `AIzaSy...`)
-
-### Step 2 — Push to GitHub
-```bash
-git init
-git add .
-git commit -m "SpeedUp blog automation"
-git remote add origin https://github.com/YOUR_USERNAME/speedup-blog-test.git
-git push -u origin main
-```
-
-### Step 3 — Deploy to Vercel
-1. Go to https://vercel.com
-2. "Add New Project" → Import your GitHub repo
-3. Click Deploy (leave all settings default)
-4. Go to: Project → Settings → Git → Deploy Hooks
-5. Create hook: name=`blog-bot`, branch=`main`
-6. Copy the webhook URL
-
-### Step 4 — Add secrets to GitHub
-Go to: GitHub repo → Settings → Secrets → Actions → New repository secret
-
-| Name | Value |
-|------|-------|
-| `GEMINI_API_KEY` | your key from Step 1 |
-| `UNSPLASH_ACCESS_KEY` | from unsplash.com/developers (optional) |
-| `VERCEL_DEPLOY_HOOK` | URL from Step 3 |
-| `INDEXNOW_KEY` | `speedup2026pune` |
-
-### Step 5 — Test it locally first
 ```bash
 npm install
-
-# Windows:
-set GEMINI_API_KEY=AIzaSyXXXXX
-node scripts/test-run.js
-
-# Mac/Linux:
-GEMINI_API_KEY=AIzaSyXXXXX node scripts/test-run.js
+npm run dev
 ```
 
-Then run `npm run dev` and open http://localhost:3000/blog
+Open `http://localhost:3000/blog`.
 
----
+## Environment Variables
 
-## How it works
+Copy `.env.local.example` to `.env.local` and fill in the keys you want to use.
 
-Every Monday, Wednesday, Friday at 6:00 AM IST:
-1. GitHub Actions triggers automatically
-2. Gemini researches best unused keyword
-3. Gemini writes 2000-word SEO blog post
-4. Pollinations.ai generates AI hero image (1200×630)
-5. Unsplash fetches 3 real photos for article
-6. MDX file saved to `content/blog/`
-7. Committed to GitHub → Vercel redeploys in ~60 seconds
-8. Google + Bing + Yandex notified via IndexNow
-
----
-
-## File Structure
-```
-speedup-blog-test/
-├── app/
-│   ├── layout.js          ← Navigation + footer
-│   ├── page.js            ← Homepage
-│   └── blog/
-│       ├── page.js        ← Blog listing
-│       └── [slug]/
-│           └── page.js    ← Individual posts
-├── content/
-│   └── blog/              ← Auto-generated MDX posts appear here
-├── scripts/
-│   ├── automate.js        ← Main automation engine
-│   ├── test-run.js        ← Quick local test
-│   └── .state.json        ← Tracks published posts (auto-created)
-├── lib/
-│   └── blog.js            ← Reads MDX files
-├── .github/
-│   └── workflows/
-│       └── auto-blog.yml  ← GitHub Actions scheduler
-└── .env.local.example     ← Copy to .env.local
+```bash
+GROQ_API_KEY=your-groq-api-key
+PEXELS_API_KEY=optional-pexels-key
+UNSPLASH_ACCESS_KEY=optional-unsplash-key
+INDEXNOW_KEY=speedup2026pune
 ```
 
----
+`GROQ_API_KEY` is required for article generation. Image keys are optional because the automation has fallbacks.
 
-## Manual trigger
-Go to GitHub → Actions → "Auto Blog Publisher" → "Run workflow"
+## Useful Scripts
 
----
+```bash
+npm run dev
+npm run build
+npm run blog:generate
+npm run blog:test
+npm run blog:sitemap
+npm run blog:fix-images
+```
+
+`blog:generate` runs the production automation engine.
+
+`blog:test` generates a local test post from the older fixed-topic generator.
+
+`blog:sitemap` rebuilds `public/sitemap.xml` from every MDX post in `content/blog`.
+
+`blog:fix-images` downloads missing local hero images and updates MDX frontmatter where possible.
+
+## How Publishing Works
+
+The workflow in `.github/workflows/auto-blog.yml` runs Monday, Tuesday, Thursday, and Saturday at 6:00 AM IST.
+
+1. GitHub Actions installs dependencies.
+2. `scripts/automate.js` researches a topic with Groq.
+3. The script writes an MDX post into `content/blog/`.
+4. A humanization and fact-check pass rewrites the draft against trusted source guidance.
+5. A quality gate blocks publication if AI artifacts, fake citations, unsupported claims, broken characters, missing FAQs, or missing source links remain.
+6. A hero image is saved into `public/images/` when possible.
+7. Social captions are saved into `scripts/social-queue/`.
+8. `scripts/sync-sitemap.js` rebuilds the sitemap.
+9. The workflow commits and pushes the generated content.
+10. IndexNow and Google sitemap pings are attempted.
+
+## Project Structure
+
+```text
+app/
+  layout.js              Global layout, nav, footer
+  page.js                Homepage
+  blog/page.js           Blog listing
+  blog/[slug]/page.js    Server-rendered blog post page
+  api/post/[slug]/route.js
+components/
+  AuthorBox.js           Trainer author profile block
+content/blog/
+  *.mdx                  Blog posts
+lib/
+  blog.js                Reads blog MDX files
+public/
+  images/                Local hero images
+  sitemap.xml
+scripts/
+  automate.js            Main blog automation engine
+  sync-sitemap.js        Rebuilds sitemap from MDX
+  fix-images.js          Repairs missing hero images
+  test-run.js            Local fixed-topic generator
+```
+
+## GitHub Secrets
+
+Add these in GitHub repository settings under Actions secrets:
+
+- `GROQ_API_KEY`
+- `PEXELS_API_KEY` optional
+- `UNSPLASH_ACCESS_KEY` optional
+- `INDEXNOW_KEY` optional
+- `NOTIFY_EMAIL`, `NOTIFY_EMAIL_PASSWORD`, and `NOTIFY_EMAILS` if email notifications are enabled
 
 ## Troubleshooting
-- **GEMINI_API_KEY error** → Add the secret to GitHub (Step 4)
-- **No posts showing** → Run `node scripts/test-run.js` first to generate a test post
-- **Images not loading** → Pollinations.ai images take 3-5 seconds on first load
-- **Build failing on Vercel** → Check Node.js version is 20+ in Vercel settings
+
+- Missing posts on Google: run `npm run blog:sitemap` and redeploy.
+- Generation fails immediately: confirm `GROQ_API_KEY` is set.
+- Missing local hero images: run `npm run blog:fix-images`.
+- Build warnings about Google Fonts can happen when the build machine cannot fetch the stylesheet; the app still builds.
