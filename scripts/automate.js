@@ -289,66 +289,8 @@ function pickTopic(topics, state) {
   return available[0]
 }
 
-// ── STEP 3: FETCH IMAGES ─────────────────────────────────────
-async function fetchImage(query, fallbackUrl, fallbackAlt, pickIndex = 0) {
-  // Words that signal irrelevant photos
-  const BAD_KW = [
-    'electrical','circuit','electronic','wiring','mechanic','inverter','voltage','smps',
-    'solar','engine','factory','construction','medical','hospital','cooking','food',
-    'nature','animal','welding','soldering','flower','beach','mountain','wedding',
-    'fashion','fitness','gym','sport','car','vehicle','architecture','real estate'
-  ]
-  const isRelevant = p => !BAD_KW.some(kw => (p.alt || '').toLowerCase().includes(kw))
+// ── STEP 3: GET LOCAL PRE-GENERATED IMAGES ────────────────────
 
-  // Try Pexels — use query as-is (no blanket 'software' suffix)
-  const pexelsKey = process.env.PEXELS_API_KEY
-  if (pexelsKey) {
-    try {
-      const res = await fetch(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape`,
-        { headers: { Authorization: pexelsKey } }
-      )
-      const data = await res.json()
-      const good = (data.photos || []).filter(isRelevant)
-      if (good.length) {
-        // Pick from top results with variety (not always first)
-        const pick = good[pickIndex % good.length]
-        return {
-          url:     pick.src.large,
-          heroUrl: pick.src.large2x || pick.src.large,
-          alt:     pick.alt || query,
-          credit:  `Photo by ${pick.photographer} on Pexels`
-        }
-      }
-    } catch {}
-  }
-
-  // Try Unsplash
-  const unsplashKey = process.env.UNSPLASH_ACCESS_KEY
-  if (unsplashKey) {
-    try {
-      const res = await fetch(
-        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=10&orientation=landscape`,
-        { headers: { Authorization: `Client-ID ${unsplashKey}` } }
-      )
-      const data = await res.json()
-      if (data.results?.length) {
-        const pick = data.results[pickIndex % data.results.length]
-        return {
-          url:     `${pick.urls.regular}&w=800&q=80`,
-          heroUrl: `${pick.urls.regular}&w=1200&h=630&fit=crop&q=80`,
-          alt:     pick.alt_description || query,
-          credit:  `Photo by ${pick.user.name} on Unsplash`
-        }
-      }
-    } catch {}
-  }
-
-  // Hardcoded fallback
-  return { url: fallbackUrl, heroUrl: fallbackUrl, alt: fallbackAlt, credit: 'Unsplash' }
-}
-
-// Default fallback images pool
 const FALLBACK_POOL = [
   'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=630&fit=crop&q=80',
   'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=630&fit=crop&q=80',
@@ -358,30 +300,6 @@ const FALLBACK_POOL = [
   'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&h=630&fit=crop&q=80',
 ]
 
-// ── POLLINATIONS.AI HERO IMAGE ────────────────────────────────
-// 100% free, no API key needed — generates a unique AI image per blog post
-function buildPollinationsPrompt(topic) {
-  // Category-specific visual styles for more relevant images
-  const styleMap = {
-    'trending-ai':  'futuristic digital interface, glowing neural network, modern tech workspace, dark background with neon blue accents, professional photography style',
-    'career':       'professional IT office Pune India, modern workspace, confident developer at laptop, bright corporate environment, cinematic lighting',
-    'comparison':   'split screen technology comparison, two coding interfaces side by side, modern developer setup, clean minimal dark theme',
-    'beginner':     'young student learning to code on laptop, friendly classroom environment, bright colorful tech education, motivational atmosphere',
-    'technical':    'close up of clean code on multiple monitors, dark IDE theme, professional software engineering setup, depth of field photography',
-  }
-
-  const style = styleMap[topic.category] || styleMap['technical']
-
-  // Build a specific prompt from the blog title
-  const subject = topic.title
-    .replace(/[—–-]+/g, 'and')
-    .replace(/[?!]/g, '')
-    .slice(0, 80)
-
-  return `${subject}, ${style}, high quality, 4K, photorealistic, no text, no watermark, no logo`
-}
-
-// Hardcoded Unsplash fallbacks (last resort — no API key needed)
 const UNSPLASH_HERO_FALLBACKS = {
   'trending-ai': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=630&fit=crop&q=80',
   'career':      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=630&fit=crop&q=80',
@@ -390,151 +308,80 @@ const UNSPLASH_HERO_FALLBACKS = {
   'technical':   'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=630&fit=crop&q=80',
 }
 
-async function generateHeroImage(topic) {
-  const imgDir    = path.join(ROOT, 'public', 'images')
-  const localFile = path.join(imgDir, `${topic.slug}.jpg`)
-  const localUrl  = `/images/${topic.slug}.jpg`
+async function getImages(topic, state) {
+  console.log('\n📸 Step 3: Fetching topic-matched images from local pre-generated pool...')
+  const imgDir = path.join(ROOT, 'public', 'images')
   if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true })
 
-  // Shared helper — download any image URL and save locally
-  const saveAndReturn = async (imageUrl, source, fetchOpts = {}) => {
-    const res = await fetch(imageUrl, { signal: AbortSignal.timeout(20000), ...fetchOpts })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const buffer = Buffer.from(await res.arrayBuffer())
-    if (buffer.length < 5000) throw new Error(`Too small (${buffer.length}B)`)
-    fs.writeFileSync(localFile, buffer)
-    console.log(`   ✓ Hero:   ${source} → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
-    return { url: localUrl, heroUrl: localUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: source }
+  const categoryDir = path.join(imgDir, 'pre-generated', topic.category)
+  let availableImages = []
+
+  if (fs.existsSync(categoryDir)) {
+    availableImages = fs.readdirSync(categoryDir)
+      .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
+      .map(f => path.join(categoryDir, f))
   }
 
-  // ── Attempt 1: Pollinations AI (free, unique, AI-generated) ───
-  try {
-    const prompt = buildPollinationsPrompt(topic)
-    const seed   = topic.slug.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
-    const url    = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1200&height=630&seed=${seed}&nologo=true&model=flux`
-    console.log(`   ⏳ Trying Pollinations AI...`)
-    const res = await fetch(url, { signal: AbortSignal.timeout(40000) })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const buffer = Buffer.from(await res.arrayBuffer())
-    if (buffer.length < 5000) throw new Error(`Too small (${buffer.length}B) — rate limited`)
-    fs.writeFileSync(localFile, buffer)
-    console.log(`   ✓ Hero:   Pollinations AI → ${localUrl}  (${Math.round(buffer.length/1024)}KB)`)
-    return { url: localUrl, heroUrl: localUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'Pollinations AI' }
-  } catch (e) {
-    console.log(`   ⚠️  Pollinations failed (${e.message}) — trying Pexels...`)
-  }
-
-  // ── Attempt 2: Pexels (topic-specific keyword search) ─────────
-  const pexelsKey = process.env.PEXELS_API_KEY
-  if (pexelsKey) {
-    try {
-      const query  = encodeURIComponent(topic.imageQuery || topic.keyword || 'technology')
-      const search = await fetch(
-        `https://api.pexels.com/v1/search?query=${query}&per_page=5&orientation=landscape`,
-        { headers: { Authorization: pexelsKey }, signal: AbortSignal.timeout(12000) }
-      )
-      if (!search.ok) throw new Error(`Pexels search HTTP ${search.status}`)
-      const data = await search.json()
-      if (!data.photos?.length) throw new Error('No Pexels results')
-      const photo    = data.photos[0]
-      const imageUrl = photo.src.landscape || photo.src.large2x
-      return await saveAndReturn(imageUrl, `Pexels`)
-    } catch (e) {
-      console.log(`   ⚠️  Pexels failed (${e.message}) — trying Unsplash...`)
+  // If no images in category, fallback to technical category
+  if (availableImages.length === 0) {
+    const techDir = path.join(imgDir, 'pre-generated', 'technical')
+    if (fs.existsSync(techDir)) {
+      availableImages = fs.readdirSync(techDir)
+        .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
+        .map(f => path.join(techDir, f))
     }
+  }
+
+  const resultImages = []
+  const needed = 4 // 1 hero + 3 body
+
+  // Shuffle available images using Fisher-Yates
+  const shuffle = (array) => {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex > 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+  }
+
+  if (availableImages.length > 0) {
+    // Pick 4 unique images, if less than 4, it will wrap around
+    const shuffledPool = shuffle([...availableImages])
+    for (let i = 0; i < needed; i++) {
+      const sourceFile = shuffledPool[i % shuffledPool.length]
+      const suffix = i === 0 ? '' : `-body${i}`
+      const filename = `${topic.slug}${suffix}${path.extname(sourceFile)}`
+      const targetFile = path.join(imgDir, filename)
+      
+      // Copy to public/images/
+      fs.copyFileSync(sourceFile, targetFile)
+      
+      resultImages.push({
+        url: `/images/${filename}`,
+        heroUrl: `/images/${filename}`,
+        alt: `${topic.title} — SpeedUp Infotech Pune`,
+        credit: 'SpeedUp Infotech'
+      })
+    }
+    console.log(`   ✓ Selected ${needed} images from pre-generated pool`)
   } else {
-    console.log(`   ℹ️  No PEXELS_API_KEY — skipping Pexels, trying Unsplash...`)
-  }
-
-  // ── Attempt 3: Unsplash (topic-specific keyword search) ───────
-  const unsplashKey = process.env.UNSPLASH_ACCESS_KEY
-  if (unsplashKey) {
-    try {
-      const query  = encodeURIComponent(topic.imageQuery || topic.keyword || 'technology')
-      const search = await fetch(
-        `https://api.unsplash.com/search/photos?query=${query}&per_page=5&orientation=landscape`,
-        { headers: { Authorization: `Client-ID ${unsplashKey}` }, signal: AbortSignal.timeout(12000) }
-      )
-      if (!search.ok) throw new Error(`Unsplash search HTTP ${search.status}`)
-      const data = await search.json()
-      if (!data.results?.length) throw new Error('No Unsplash results')
-      const photo    = data.results[0]
-      const imageUrl = `${photo.urls.regular}&w=1200&h=630&fit=crop&q=80`
-      return await saveAndReturn(imageUrl, `Unsplash`)
-    } catch (e) {
-      console.log(`   ⚠️  Unsplash failed (${e.message}) — using hardcoded fallback...`)
+    // Ultimate Fallback if user hasn't added any images to folders yet
+    console.log(`   ⚠️  No pre-generated images found! Using remote fallback URLs.`)
+    const heroRemote = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
+    resultImages.push({ url: heroRemote, heroUrl: heroRemote, alt: topic.title, credit: 'Unsplash' })
+    
+    for (let i = 1; i < needed; i++) {
+      const bodyRemote = FALLBACK_POOL[(state.total + i) % FALLBACK_POOL.length]
+      resultImages.push({ url: bodyRemote, heroUrl: bodyRemote, alt: topic.title, credit: 'Unsplash' })
     }
   }
 
-  // ── Attempt 4: Hardcoded Unsplash URL (always works, no key) ──
-  try {
-    const fbUrl = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
-    return await saveAndReturn(fbUrl, `Unsplash (hardcoded)`)
-  } catch (e) {
-    console.log(`   ⚠️  All attempts failed — returning remote URL`)
+  return { 
+    hero: resultImages[0], 
+    body: [resultImages[1], resultImages[2], resultImages[3]] 
   }
-
-  // ── Last resort: remote URL only ──────────────────────────────
-  const remoteUrl = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
-  return { url: remoteUrl, heroUrl: remoteUrl, alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'Unsplash' }
-}
-
-
-async function getImages(topic, state) {
-  console.log('\n📸 Step 3: Fetching topic-matched images...')
-  const q   = topic.imageQuery || 'technology coding laptop'
-  const idx = state.total || 0
-  const fbUrl = FALLBACK_POOL[idx % FALLBACK_POOL.length]
-
-  // Build category-specific, varied queries for each image slot
-  // Use imageQuery as the base for hero only — avoid repeating it in suffix
-  const categoryQueries = {
-    'trending-ai': [
-      q,                                          // hero: exact topic query from Groq
-      'developer working laptop screen code',
-      'machine learning data visualization',
-      'students learning technology classroom'
-    ],
-    'career': [
-      `${q} professional`,
-      'software developer job interview',
-      'IT professional working computer',
-      'students coding bootcamp training'
-    ],
-    'comparison': [
-      `${q} technology`,
-      'programmer dual screen setup',
-      'coding languages framework development',
-      'IT students group project laptop'
-    ],
-    'beginner': [
-      `${q} learning`,
-      'beginner programmer laptop study',
-      'online learning education technology',
-      'student studying programming course'
-    ],
-    'technical': [
-      `${q} developer`,
-      'full stack web development code',
-      'software engineer technical work',
-      'programming project team collaboration'
-    ],
-  }
-
-  const queries = categoryQueries[topic.category] || categoryQueries['technical']
-
-  // Hero: Pollinations AI → Unsplash download → Unsplash remote (guaranteed image)
-  const heroImg  = await generateHeroImage(topic)
-
-  const bodyImg1 = await fetchImage(queries[1], FALLBACK_POOL[(idx+1) % FALLBACK_POOL.length], topic.keyword, (idx+1) % 4)
-  const bodyImg2 = await fetchImage(queries[2], FALLBACK_POOL[(idx+2) % FALLBACK_POOL.length], topic.keyword, (idx+2) % 4)
-  const bodyImg3 = await fetchImage(queries[3], FALLBACK_POOL[(idx+3) % FALLBACK_POOL.length], 'SpeedUp Infotech Pune', (idx+3) % 4)
-
-  console.log(`   ✓ Body 1: ${bodyImg1.credit}  ["${queries[1]}")`)
-  console.log(`   ✓ Body 2: ${bodyImg2.credit}  ["${queries[2]}")`)
-  console.log(`   ✓ Body 3: ${bodyImg3.credit}  ["${queries[3]}")`)
-
-  return { hero: heroImg, body: [bodyImg1, bodyImg2, bodyImg3] }
 }
 
 // ── STEP 4: WRITE BLOG POST (2 calls = ~2000 words) ──────────
