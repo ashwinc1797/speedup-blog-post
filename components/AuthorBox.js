@@ -7,23 +7,26 @@ const AUTHOR_PROFILES = {
     color:      '#D92B2B',
     title:      'Data Science & AI Trainer',
     company:    'SpeedUp Infotech Pune',
-    specialty:  'Data Science, AI & Machine Learning',
+    specialty:  'Machine Learning, Generative AI, NLP, Data Analytics, Power BI',
+    linkedin:   'https://www.linkedin.com/in/ashwinuchaudhari',
     tags:       ['AI & ML', 'Deep Learning', 'Python'],
   },
-  'Chetna Vasave': {
+  'Chetana Vasave': {
     initials:   'CV',
     color:      '#2B7DD9',
     title:      'Data Analytics Trainer',
     company:    'SpeedUp Infotech Pune',
-    specialty:  'Data Analytics, Power BI & SQL',
+    specialty:  'Excel | Power BI | SQL | AI | Python',
+    linkedin:   'https://www.linkedin.com/in/chetana037/',
     tags:       ['Power BI', 'SQL', 'Excel', 'Python'],
   },
   'Pratik Sabale': {
     initials:   'PS',
     color:      '#2BD97D',
-    title:      'Full Stack Trainer',
+    title:      'AI System Builder & Founder',
     company:    'SpeedUp Infotech Pune',
-    specialty:  'Full Stack Development, MERN Stack & Python',
+    specialty:  'AI Systems, MERN Stack, Python, Automation, Full-Stack Development',
+    linkedin:   'https://www.linkedin.com/in/pratik-sabale-4b96b7171/',
     tags:       ['MERN Stack', 'Node.js', 'Python', 'MongoDB'],
   },
   'Rutvij Mahamuni': {
@@ -31,16 +34,18 @@ const AUTHOR_PROFILES = {
     color:      '#D9882B',
     title:      'Frontend Development Trainer',
     company:    'SpeedUp Infotech Pune',
-    specialty:  'React JS, Next.js & Frontend Development',
+    specialty:  'MERN Stack Development, ReactJS, Communication Coaching and Interview preparation',
+    linkedin:   'https://www.linkedin.com/in/rutvijmahamuni',
     tags:       ['React JS', 'Next.js', 'JavaScript', 'UI/UX'],
   },
-  'Sameer': {
-    initials:   'SM',
+  'Sameer Thaware': {
+    initials:   'ST',
     color:      '#8B2BD9',
-    title:      'Cloud Computing Trainer',
+    title:      'Devops Trainer',
     company:    'SpeedUp Infotech Pune',
-    specialty:  'Cloud Computing, AWS, Azure & DevOps',
-    linkedin:   'https://linkedin.com/', // Ask Sameer for link
+    specialty:  'Linux, AWS, Jenkins, Docker, Kubernetes, AiOps, DevOps',
+    linkedin:   'https://www.linkedin.com/in/sameerthaware/',
+    tags:       ['Linux', 'AWS', 'Docker', 'Kubernetes'],
   },
 }
 
