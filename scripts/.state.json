@@ -24,7 +24,8 @@
     "top-ai-and-ml-career-paths-2026",
     "unlocking-ai-potential-in-2026",
     "demystifying-ai-models-2026",
-    "revolutionizing-industries-with-ai"
+    "revolutionizing-industries-with-ai",
+    "impact-of-ai-on-web-development-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -49,7 +50,8 @@
     "AI and ML career paths",
     "AI trends 2026",
     "AI models 2026",
-    "AI in industries"
+    "AI in industries",
+    "AI web development"
   ],
   "publishedPosts": [
     {
@@ -199,8 +201,16 @@
       "keyword": "AI in industries",
       "publishedAt": "2026-05-30T04:33:31.697Z",
       "words": 2910
+    },
+    {
+      "slug": "impact-of-ai-on-web-development-2026",
+      "title": "Impact of AI on Web Development 2026",
+      "category": "trending-ai",
+      "keyword": "AI web development",
+      "publishedAt": "2026-06-01T05:24:33.329Z",
+      "words": 3075
     }
   ],
-  "total": 25,
-  "lastRun": "2026-05-30T04:33:31.697Z"
+  "total": 26,
+  "lastRun": "2026-06-01T05:24:33.329Z"
 }
