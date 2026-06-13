@@ -665,19 +665,21 @@ function buildMdx(topic, images, fullBody, today, state) {
 
   const author = pickAuthor(state)
 
+  const escapeQuote = (str) => (str || '').replace(/"/g, '\\"');
+
   const frontmatter = `---
-title: "${topic.title}"
+title: "${escapeQuote(topic.title)}"
 slug: "${topic.slug}"
-description: "${description}"
+description: "${escapeQuote(description)}"
 date: "${today}"
 lastUpdated: "${today}"
-author: "${author.name}"
-authorBio: "${author.bio}"
+author: "${escapeQuote(author.name)}"
+authorBio: "${escapeQuote(author.bio)}"
 category: "${topic.category === 'trending-ai' ? 'AI & Tech Trends' : topic.category === 'career' ? 'IT Careers' : topic.category === 'comparison' ? 'Course Comparison' : 'IT Guide'}"
-tags: ["IT Training Pune", "SpeedUp Infotech", "${topic.keyword}"]
-keywords: ["${topic.keyword}", "IT courses Pune", "SpeedUp Infotech Pune", "IT training Shivaji Nagar"]
+tags: ["IT Training Pune", "SpeedUp Infotech", "${escapeQuote(topic.keyword)}"]
+keywords: ["${escapeQuote(topic.keyword)}", "IT courses Pune", "SpeedUp Infotech Pune", "IT training Shivaji Nagar"]
 heroImage: "${heroUrl}"
-heroImageAlt: "${topic.title} — SpeedUp Infotech Pune"
+heroImageAlt: "${escapeQuote(topic.title)} — SpeedUp Infotech Pune"
 canonical: "${SITE}/blog/${topic.slug}"
 readTime: "12 min read"
 trending: ${topic.category === 'trending-ai'}
