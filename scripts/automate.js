@@ -474,18 +474,18 @@ Write as ${author.name}, not a different trainer. Include small batches, real pr
 ## Frequently Asked Questions
 
 **Q: ${isTrending ? `How is this topic changing IT jobs in Pune in 2026?` : `How long does it take to learn ${topic.keyword.split(' ')[0]} from scratch?`}**
-A: [Write 3-4 detailed sentences. Use cautious salary or demand language. Mention that readers should verify current openings on LinkedIn Jobs or company career pages.]
+A: Write 3-4 detailed sentences here. Use cautious salary or demand language. Mention that readers should verify current openings on LinkedIn Jobs or company career pages.
 
 **Q: ${isTrending ? 'Which Pune companies are actively hiring for this skill in 2026?' : `Is ${topic.keyword.split(' ').slice(0,3).join(' ')} worth learning for freshers in Pune?`}**
-A: [3-4 sentences naming specific Pune companies as examples of employers in the region. Do not claim they are currently hiring for this exact skill unless framed as something readers should verify.]
+A: Write 3-4 sentences here naming specific Pune companies as examples of employers. Do not claim they are currently hiring for this exact skill; frame it as something readers should verify on company career pages.
 
 **Q: Does SpeedUp Infotech cover this in their courses?**
-A: Yes, SpeedUp Infotech at Shivaji Nagar, Pune covers this comprehensively with hands-on projects and real industry assignments. Our students have been placed at Persistent Systems, Zensar Technologies, and Cybage with packages from Rs 3.5-10 LPA. With 500+ placements and 4.8★ Justdial rating, we are Pune's most trusted IT training institute. Call ${PHONE} to know the latest batch schedule.
+A: Yes, SpeedUp Infotech at Shivaji Nagar, Pune covers this comprehensively with hands-on projects and real industry assignments. Our students have gone on to work at companies like Persistent Systems, Zensar Technologies, and Cybage. Call ${PHONE} to know the latest batch schedule.
 
 **Q: What is the realistic salary for a fresher with this skill in Pune?**
-A: [3-4 sentences with specific salary ranges: fresher Rs X-Y LPA, 1-2 years Rs A-B LPA, 3-5 years Rs C-D LPA. Cite Glassdoor India or LinkedIn Salary data. Explain what factors affect the salary — company size, specific skills, project experience.]
+A: Write 3-4 sentences here with broad salary ranges for freshers, 1-2 years experience, and 3-5 years experience. Explain what factors affect the salary — company size, specific skills, project portfolio, and interview performance.
 
-[Conclusion — 120 words: Summarize key insights. Include "${topic.keyword}" naturally. Strong CTA mentioning free demo class, batch starting soon, limited seats.]
+Write a 120-word conclusion here. Summarize key insights. Include "${topic.keyword}" naturally. End with a strong CTA mentioning a free demo class and limited seats.
 
 Book a free demo class at SpeedUp Infotech, ${ADDR} — call ${PHONE}. New batch starting soon — limited seats.
 
@@ -583,12 +583,26 @@ function contentQualityIssues(content, topic) {
   return issues
 }
 
+// Pre-scrub bracket placeholders the model may have echoed verbatim from the prompt.
+// These would otherwise trip the "Prompt placeholder leaked" QA check.
+function scrubPlaceholders(text) {
+  return text
+    // Remove lines that are entirely a bracket instruction, e.g. [Write 3-4 sentences...]
+    .replace(/^\[.{10,300}\]\s*$/gm, '')
+    // Remove inline bracket instructions left mid-paragraph
+    .replace(/\[(?:Write|Summarize|Include|Add|Cite|Explain|List|Describe|Answer)[^\]]{5,250}\]/gi, '')
+    // Collapse any resulting blank lines created by the removal
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 async function humanizeAndFactCheckPost(topic, draftBody, state) {
   console.log('\nStep 5: Humanizing and fact-checking draft...')
 
   const author = pickAuthor(state)
   const sourceGuide = sourceGuideForTopic(topic)
-  let edited = draftBody
+  // Pre-scrub any bracket placeholders before the first QA pass
+  let edited = scrubPlaceholders(draftBody)
   let issues = []
 
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -613,6 +627,12 @@ ${sourceText}
 Editorial rules:
 ${HUMAN_REVIEW_RULES.map(rule => `- ${rule}`).join('\n')}
 
+CRITICAL LENGTH RULE: The final article MUST be at least 1500 words. Do NOT cut, summarise, or shorten sections. Only rewrite for tone and fact accuracy. If a section is missing, expand it — never delete it.
+
+CRITICAL BRAND RULE: The article MUST mention "SpeedUp Infotech" at least 3 times (in the SpeedUp section, the FAQ, and the conclusion CTA). Do NOT remove or rename the institute.
+
+PLACEHOLDER RULE: If any text in square brackets like [Write 3-4 sentences...] remains in the draft, replace it with real written content — never leave brackets in the published article.
+
 Fact-check rules:
 - Do not invent exact statistics, company adoption stories, salary guarantees, ratings, or placement outcomes.
 - Keep salary ranges broad and explain assumptions.
@@ -624,13 +644,13 @@ ${repairNote}
 Draft Markdown:
 ${edited}`
 
-    edited = normalizeEditorialText(await groq(
-      'You are a strict senior editor, SEO reviewer, and fact-checker. Return only the final publishable Markdown article.',
+    edited = scrubPlaceholders(normalizeEditorialText(await groq(
+      'You are a strict senior editor, SEO reviewer, and fact-checker. Return only the final publishable Markdown article. Never shorten the article. Never remove SpeedUp Infotech mentions.',
       prompt,
       MODEL_WRITE,
       2,
-      5000
-    ))
+      8000  // raised from 5000 — large enough for a full 2000-word article + edits
+    )))
 
     issues = contentQualityIssues(edited, topic)
     if (issues.length === 0) {
