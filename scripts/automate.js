@@ -587,7 +587,9 @@ function contentQualityIssues(content, topic) {
   }
 
   const speedupMentions = (plain.match(/SpeedUp Infotech/gi) || []).length
-  if (speedupMentions > 10) issues.push(`Possible promotional stuffing: SpeedUp Infotech mentioned ${speedupMentions} times.`)
+  // Allow up to 12 mentions — a 2000-word article naturally uses the name in the
+  // dedicated section (4–5×), FAQ (2×), conclusion (1×), and intro (1×).
+  if (speedupMentions > 12) issues.push(`Possible promotional stuffing: SpeedUp Infotech mentioned ${speedupMentions} times.`)
 
   return issues
 }
@@ -640,7 +642,7 @@ ${HUMAN_REVIEW_RULES.map(rule => `- ${rule}`).join('\n')}
 
 CRITICAL LENGTH RULE: The final article MUST be at least 1500 words. Do NOT cut, summarise, or shorten sections. Only rewrite for tone and fact accuracy. If a section is missing, expand it — never delete it.
 
-CRITICAL BRAND RULE: The article MUST mention "SpeedUp Infotech" at least 3 times (in the SpeedUp section, the FAQ, and the conclusion CTA). Do NOT remove or rename the institute.
+CRITICAL BRAND RULE: The article MUST mention "SpeedUp Infotech" between 4 and 8 times total. Keep mentions in: the intro (once), the dedicated SpeedUp section (3–4 times), the FAQ (once), and the conclusion CTA (once). If the draft has more than 8 mentions, actively remove the excess — do NOT preserve all mentions.
 
 PLACEHOLDER RULE: If any text in square brackets like [Write 3-4 sentences...] remains in the draft, replace it with real written content — never leave brackets in the published article.
 
