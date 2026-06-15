@@ -165,11 +165,20 @@ async function groq(system, user, model = MODEL_WRITE, retries = 3, maxTokens = 
     // Handle rate limit — wait and retry
     if (res.status === 429) {
       const errText = await res.text()
-      // Extract wait time from error message e.g. "try again in 7m37.92s"
-      const waitMatch = errText.match(/(\d+)m([\d.]+)s/)
-      const waitMs = waitMatch
-        ? (parseInt(waitMatch[1]) * 60 + parseFloat(waitMatch[2])) * 1000 + 2000
-        : attempt * 30000 // fallback: 30s, 60s, 90s
+      // Parse wait time from Groq error — two formats:
+      //   "try again in 7m37.92s"  →  Xm Y.Zs
+      //   "try again in 90.5s"     →  plain seconds
+      let waitMs
+      const minsMatch = errText.match(/(\d+)m([\d.]+)s/)
+      const secsMatch = errText.match(/try again in ([\d.]+)s/i)
+      if (minsMatch) {
+        waitMs = (parseInt(minsMatch[1]) * 60 + parseFloat(minsMatch[2])) * 1000 + 3000
+      } else if (secsMatch) {
+        waitMs = parseFloat(secsMatch[1]) * 1000 + 3000
+      } else {
+        // Conservative fallback: 90s, 120s, 180s
+        waitMs = [90000, 120000, 180000][Math.min(attempt - 1, 2)]
+      }
       const waitSec = Math.round(waitMs / 1000)
       console.log(`   ⏳ Rate limit hit. Waiting ${waitSec}s before retry ${attempt}/${retries}...`)
       await new Promise(r => setTimeout(r, waitMs))
@@ -604,8 +613,10 @@ async function humanizeAndFactCheckPost(topic, draftBody, state) {
   // Pre-scrub any bracket placeholders before the first QA pass
   let edited = scrubPlaceholders(draftBody)
   let issues = []
-
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  // QA loop: attempt 1 uses the full 70B writer; attempts 2–3 drop to the faster 8B model
+  // so retries don't consume another large 70B token chunk.
+  const editModels = [MODEL_WRITE, MODEL_RESEARCH, MODEL_RESEARCH]
+  for (let attempt = 1; attempt <= 3; attempt++) {
     const sourceText = sourceGuide.map(source =>
       `- ${source.name}: ${source.url}\n  Use when: ${source.useWhen}\n  Facts: ${source.facts.join(' ')}`
     ).join('\n')
@@ -647,9 +658,9 @@ ${edited}`
     edited = scrubPlaceholders(normalizeEditorialText(await groq(
       'You are a strict senior editor, SEO reviewer, and fact-checker. Return only the final publishable Markdown article. Never shorten the article. Never remove SpeedUp Infotech mentions.',
       prompt,
-      MODEL_WRITE,
+      editModels[attempt - 1],
       2,
-      8000  // raised from 5000 — large enough for a full 2000-word article + edits
+      4500  // 4500 keeps a ~3000-token output budget without blowing the TPM limit
     )))
 
     issues = contentQualityIssues(edited, topic)
@@ -819,6 +830,11 @@ async function main() {
 
   // 4. Write 2000-word post
   const { fullBody: draftBody, totalWords, today } = await writePost(topic, images, state)
+
+  // Cooldown: the two write calls above consumed most of the per-minute token budget.
+  // Wait 20 seconds before the editorial pass so the bucket partially refills.
+  console.log('\n   ⏸️  Cooling down 20s before editorial pass...')
+  await new Promise(r => setTimeout(r, 20000))
 
   // 5. Humanize, fact-check, and quality-gate the post before publishing
   const { fullBody, qaPassed } = await humanizeAndFactCheckPost(topic, draftBody, state)
