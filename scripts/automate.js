@@ -645,86 +645,119 @@ function capBrandMentions(text, brand, maxKeep = 8) {
   })
 }
 
+/**
+ * Split a Markdown article into two halves at the H2 heading nearest
+ * to the midpoint, so each half can be edited in a separate API call.
+ * Falls back to a character-position split if no H2 is found.
+ */
+function splitAtMidH2(text) {
+  const mid = Math.floor(text.length / 2)
+  // Find last H2 at or before midpoint
+  const before = text.slice(0, mid)
+  const lastH2 = before.lastIndexOf('\n## ')
+  if (lastH2 !== -1) {
+    return [text.slice(0, lastH2).trim(), text.slice(lastH2).trim()]
+  }
+  // Find first H2 after midpoint
+  const after = text.slice(mid)
+  const nextH2 = after.indexOf('\n## ')
+  if (nextH2 !== -1) {
+    const splitIdx = mid + nextH2
+    return [text.slice(0, splitIdx).trim(), text.slice(splitIdx).trim()]
+  }
+  // No H2 found — split at midpoint on a newline
+  const newline = text.slice(mid).indexOf('\n')
+  const idx = newline !== -1 ? mid + newline : mid
+  return [text.slice(0, idx).trim(), text.slice(idx).trim()]
+}
+
 async function humanizeAndFactCheckPost(topic, draftBody, state) {
-  console.log('\nStep 5: Humanizing and fact-checking draft...')
+  console.log('\nStep 5: Humanizing and fact-checking draft (split-call mode)...')
 
   const author = pickAuthor(state)
   const sourceGuide = sourceGuideForTopic(topic)
-  // Pre-scrub bracket placeholders before the first QA pass
-  let edited = scrubPlaceholders(draftBody)
 
-  // Programmatically reduce excess SpeedUp Infotech mentions before any API call.
-  // The writer often produces 15-25 mentions; we cap at 8 using string replacement
-  // so the editor never has to fight the stuffing QA gate.
-  edited = capBrandMentions(edited, 'SpeedUp Infotech', 8)
+  // Pre-scrub bracket placeholders and cap brand mentions on the raw draft
+  let draft = capBrandMentions(scrubPlaceholders(draftBody), 'SpeedUp Infotech', 8)
 
-  let issues = []
-  // All editorial passes use the 70B model.
-  // The 8B model (llama-3.1-8b-instant) has a hard 6,000 TPM cap which is smaller
-  // than a full article + prompt (~8,500 tokens), so it cannot be used here.
-  const editModels = [MODEL_WRITE, MODEL_WRITE, MODEL_WRITE]
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    const sourceText = sourceGuide.map(source =>
-      `- ${source.name}: ${source.url}\n  Use when: ${source.useWhen}\n  Facts: ${source.facts.join(' ')}`
-    ).join('\n')
+  const sourceText = sourceGuide.map(source =>
+    `- ${source.name}: ${source.url}\n  Use when: ${source.useWhen}\n  Facts: ${source.facts.join(' ')}`
+  ).join('\n')
 
-    const repairNote = issues.length
-      ? `\n\nThe previous edit still had these QA failures. Fix them all:\n- ${issues.join('\n- ')}`
-      : ''
-
-    const prompt = `Edit this generated Markdown article before publication.
+  // Build the shared editorial instruction block (sent with every half)
+  const editInstructions = `You are a strict senior editor, SEO reviewer, and fact-checker for SpeedUp Infotech.
+Return ONLY the edited Markdown. Do not add frontmatter. Do not explain changes.
 
 Topic: ${topic.title}
 Primary keyword: ${topic.keyword}
-Author persona: ${author.name} - ${author.specialty}
-Location context: ${ADDR}
+Author persona: ${author.name} — ${author.specialty}
+Location: ${ADDR}
 
-Trusted source guide:
+Trusted sources:
 ${sourceText}
 
-Editorial rules:
-${HUMAN_REVIEW_RULES.map(rule => `- ${rule}`).join('\n')}
+Rules:
+${HUMAN_REVIEW_RULES.map(r => `- ${r}`).join('\n')}
+- NEVER shorten or delete any section. Only rewrite for tone, clarity, and accuracy.
+- CAGR / MARKET-SIZE: If a sentence pairs a growth claim with a source name (NASSCOM, LinkedIn, Glassdoor) without a real URL, rewrite it as a general observation.
+- PLACEHOLDER: Replace any text in square brackets with real written content.
+- Fact-check: do not invent statistics, ratings, placement outcomes, or salary guarantees.`
 
-CRITICAL LENGTH RULE: The final article MUST be at least 1500 words. Do NOT cut, summarise, or shorten sections. Only rewrite for tone and fact accuracy. If a section is missing, expand it — never delete it.
+  // ── Split edit: Part A then Part B ───────────────────────────────────────────
+  // Each half is ~1200 words / ~1600 tokens in + 1800 max out = ~3400 tokens per call.
+  // This keeps every call well under Groq's 6,000 TPM free-tier limit.
+  const [halfA, halfB] = splitAtMidH2(draft)
+  console.log(`   Editing Part A (~${halfA.split(/\s+/).length} words)...`)
 
-CRITICAL BRAND RULE: The article MUST mention "SpeedUp Infotech" between 4 and 8 times total. Keep mentions in: the intro (once), the dedicated SpeedUp section (3–4 times), the FAQ (once), and the conclusion CTA (once). If the draft has more than 8 mentions, actively remove the excess — do NOT preserve all mentions.
+  const editedA = normalizeEditorialText(await groq(
+    editInstructions,
+    `Edit this FIRST HALF of the article. Do not add a conclusion — that is in Part B.\n\n${halfA}`,
+    MODEL_WRITE, 3, 2200
+  ))
 
-PLACEHOLDER RULE: If any text in square brackets like [Write 3-4 sentences...] remains in the draft, replace it with real written content — never leave brackets in the published article.
+  console.log('   ⏸️  Pausing 15s between halves...')
+  await new Promise(r => setTimeout(r, 15000))
 
-CAGR / MARKET-SIZE RULE: Do NOT write sentences that pair market-size or growth phrases (CAGR, "market size", "expected to reach", "job opportunities") with a source name (NASSCOM, LinkedIn, Glassdoor, "according to") unless you also include the exact URL in the same sentence. If such a sentence exists in the draft, rewrite it as a general observation without the specific claim or source name.
+  console.log(`   Editing Part B (~${halfB.split(/\s+/).length} words)...`)
+  const editedB = normalizeEditorialText(await groq(
+    editInstructions,
+    `Edit this SECOND HALF of the article. This half must contain the FAQ, SpeedUp Infotech section, and conclusion.\n\n${halfB}`,
+    MODEL_WRITE, 3, 2200
+  ))
 
-Fact-check rules:
-- Do not invent exact statistics, company adoption stories, salary guarantees, ratings, or placement outcomes.
-- Keep salary ranges broad and explain assumptions.
-- If a claim cannot be verified from the source guide, rewrite it as cautious guidance or remove it.
-- For React 19, state that stable React 19 was announced on December 5, 2024, and link the official React source.
-- Preserve valid Markdown only. Do not return frontmatter. Do not explain your changes.
-${repairNote}
+  // Rejoin and run all QA checks on the full article
+  let edited = capBrandMentions(
+    scrubPlaceholders(`${editedA}\n\n${editedB}`),
+    'SpeedUp Infotech', 10
+  )
 
-Draft Markdown:
-${edited}`
-
-    edited = scrubPlaceholders(normalizeEditorialText(await groq(
-      'You are a strict senior editor, SEO reviewer, and fact-checker. Return only the final publishable Markdown article. Never shorten the article. Never remove SpeedUp Infotech mentions.',
-      prompt,
-      editModels[attempt - 1],
-      2,
-      4500
-    )))
-    // Re-cap brand mentions after editorial — the editor may re-introduce the name
-    // when expanding sections, which would re-trigger the stuffing QA gate.
-    edited = capBrandMentions(edited, 'SpeedUp Infotech', 10)
-
-    issues = contentQualityIssues(edited, topic)
-    if (issues.length === 0) {
-      console.log(`   Editorial QA passed on attempt ${attempt}`)
-      return { fullBody: edited, qaIssues: [], qaPassed: true }
-    }
-
-    console.log(`   Editorial QA attempt ${attempt} found: ${issues.join('; ')}`)
+  const issues = contentQualityIssues(edited, topic)
+  if (issues.length === 0) {
+    console.log('   Editorial QA passed')
+    return { fullBody: edited, qaIssues: [], qaPassed: true }
   }
 
-  throw new Error(`Content QA failed. Not publishing: ${issues.join('; ')}`)
+  // One repair pass if QA fails
+  console.log(`   QA issues found: ${issues.join('; ')}`)
+  console.log('   Running repair pass...')
+
+  await new Promise(r => setTimeout(r, 15000))
+
+  const repairPrompt = `The following article has these QA problems that must be fixed:\n- ${issues.join('\n- ')}\n\nFix every issue. Return the complete corrected Markdown article.\n\n${edited}`
+  edited = capBrandMentions(
+    scrubPlaceholders(normalizeEditorialText(await groq(
+      editInstructions, repairPrompt, MODEL_WRITE, 3, 4000
+    ))),
+    'SpeedUp Infotech', 10
+  )
+
+  const finalIssues = contentQualityIssues(edited, topic)
+  if (finalIssues.length === 0) {
+    console.log('   Editorial QA passed on repair attempt')
+    return { fullBody: edited, qaIssues: [], qaPassed: true }
+  }
+
+  throw new Error(`Content QA failed. Not publishing: ${finalIssues.join('; ')}`)
 }
 
 function buildMdx(topic, images, fullBody, today, state) {
@@ -886,10 +919,10 @@ async function main() {
   // 4. Write 2000-word post
   const { fullBody: draftBody, totalWords, today } = await writePost(topic, images, state)
 
-  // Cooldown: the two write calls above consumed most of the per-minute token budget.
-  // Wait 20 seconds before the editorial pass so the bucket partially refills.
-  console.log('\n   ⏸️  Cooling down 20s before editorial pass...')
-  await new Promise(r => setTimeout(r, 20000))
+  // Cooldown: let the token bucket refill after two 1800-token write calls.
+  // 45s recovers ~4500 tokens at 6000 TPM, enough for both split edit calls.
+  console.log('\n   ⏸️  Cooling down 45s before editorial pass...')
+  await new Promise(r => setTimeout(r, 45000))
 
   // 5. Humanize, fact-check, and quality-gate the post before publishing
   const { fullBody, qaPassed } = await humanizeAndFactCheckPost(topic, draftBody, state)
