@@ -606,9 +606,10 @@ function contentQualityIssues(content, topic) {
   }
 
   const speedupMentions = (plain.match(/SpeedUp Infotech/gi) || []).length
-  // Allow up to 12 mentions — a 2000-word article naturally uses the name in the
-  // dedicated section (4–5×), FAQ (2×), conclusion (1×), and intro (1×).
-  if (speedupMentions > 12) issues.push(`Possible promotional stuffing: SpeedUp Infotech mentioned ${speedupMentions} times.`)
+  // Allow up to 15 mentions — H2 headings, FAQ question text, and the dedicated
+  // SpeedUp section all legitimately repeat the name; 15 gives the editor room
+  // without letting true keyword stuffing through.
+  if (speedupMentions > 15) issues.push(`Possible promotional stuffing: SpeedUp Infotech mentioned ${speedupMentions} times.`)
 
   return issues
 }
@@ -690,6 +691,8 @@ CRITICAL BRAND RULE: The article MUST mention "SpeedUp Infotech" between 4 and 8
 
 PLACEHOLDER RULE: If any text in square brackets like [Write 3-4 sentences...] remains in the draft, replace it with real written content — never leave brackets in the published article.
 
+CAGR / MARKET-SIZE RULE: Do NOT write sentences that pair market-size or growth phrases (CAGR, "market size", "expected to reach", "job opportunities") with a source name (NASSCOM, LinkedIn, Glassdoor, "according to") unless you also include the exact URL in the same sentence. If such a sentence exists in the draft, rewrite it as a general observation without the specific claim or source name.
+
 Fact-check rules:
 - Do not invent exact statistics, company adoption stories, salary guarantees, ratings, or placement outcomes.
 - Keep salary ranges broad and explain assumptions.
@@ -706,8 +709,11 @@ ${edited}`
       prompt,
       editModels[attempt - 1],
       2,
-      4500  // 4500 keeps a ~3000-token output budget without blowing the TPM limit
+      4500
     )))
+    // Re-cap brand mentions after editorial — the editor may re-introduce the name
+    // when expanding sections, which would re-trigger the stuffing QA gate.
+    edited = capBrandMentions(edited, 'SpeedUp Infotech', 10)
 
     issues = contentQualityIssues(edited, topic)
     if (issues.length === 0) {
