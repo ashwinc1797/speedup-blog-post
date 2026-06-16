@@ -90,6 +90,9 @@ jobs:
             echo "No new content to commit"
           else
             git commit -m "Auto-publish blog [$(date +'%Y-%m-%d')]"
+            # Pull any commits that landed on remote while the workflow was running,
+            # then replay our blog commit on top — prevents non-fast-forward rejection.
+            git pull --rebase origin master
             git push origin master
             echo "PUSHED=true" >> $GITHUB_ENV
           fi
