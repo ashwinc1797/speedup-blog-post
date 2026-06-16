@@ -45,6 +45,8 @@ jobs:
         id: blog
         env:
           GROQ_API_KEY:        ${{ secrets.GROQ_API_KEY }}
+          GROQ_API_KEY_2:      ${{ secrets.GROQ_API_KEY_2 }}
+          GROQ_API_KEY_3:      ${{ secrets.GROQ_API_KEY_3 }}
           PEXELS_API_KEY:      ${{ secrets.PEXELS_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           INDEXNOW_KEY:        ${{ secrets.INDEXNOW_KEY }}

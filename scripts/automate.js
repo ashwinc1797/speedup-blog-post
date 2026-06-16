@@ -61,10 +61,24 @@ function pickAuthor(state) {
 
 // ── GROQ ──────────────────────────────────────────────────────
 // Model strategy:
-//   8B  (llama-3.1-8b-instant)      → keyword research  (fast, cheap, just JSON output)
-//   70B (llama-3.3-70b-versatile)   → blog writing      (premium quality content)
+//   8B  (llama-3.1-8b-instant)      → keyword research only (fast, small JSON output)
+//   70B (llama-3.3-70b-versatile)   → all writing + editing  (premium quality)
+//
+// Multi-key rotation: set GROQ_API_KEY, GROQ_API_KEY_2, GROQ_API_KEY_3 in GitHub
+// Secrets. On every 429 / 413 the next key is tried automatically.
 const MODEL_RESEARCH = 'llama-3.1-8b-instant'
 const MODEL_WRITE    = 'llama-3.3-70b-versatile'
+
+// Collect all provided Groq keys (primary + optional extras)
+const GROQ_KEYS = [
+  process.env.GROQ_API_KEY,
+  process.env.GROQ_API_KEY_2,
+  process.env.GROQ_API_KEY_3,
+].filter(Boolean)
+
+let _groqKeyIdx = 0
+function currentGroqKey() { return GROQ_KEYS[_groqKeyIdx % GROQ_KEYS.length] }
+function rotateGroqKey()  { _groqKeyIdx++; console.log(`   🔑 Rotated to Groq key ${(_groqKeyIdx % GROQ_KEYS.length) + 1}/${GROQ_KEYS.length}`) }
 
 const TRUSTED_SOURCE_GUIDE = [
   {
@@ -144,10 +158,10 @@ const BLOCKED_CONTENT_PATTERNS = [
 const REQUIRED_SOURCE_SECTION = /## Sources and further reading/i
 
 async function groq(system, user, model = MODEL_WRITE, retries = 3, maxTokens = 1800) {
-  const key = process.env.GROQ_API_KEY
-  if (!key) throw new Error('GROQ_API_KEY not set in GitHub Secrets')
+  if (GROQ_KEYS.length === 0) throw new Error('No GROQ_API_KEY set in GitHub Secrets')
 
   for (let attempt = 1; attempt <= retries; attempt++) {
+    const key = currentGroqKey()
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
@@ -162,12 +176,18 @@ async function groq(system, user, model = MODEL_WRITE, retries = 3, maxTokens = 
       }),
     })
 
-    // Handle rate limit — wait and retry
-    if (res.status === 429) {
+    // 429 = rate-limited on this key; 413 = request too large for this key's TPM bucket
+    if (res.status === 429 || res.status === 413) {
       const errText = await res.text()
-      // Parse wait time from Groq error — two formats:
-      //   "try again in 7m37.92s"  →  Xm Y.Zs
-      //   "try again in 90.5s"     →  plain seconds
+
+      // Try rotating to the next key first — it has a fresh token bucket
+      if (GROQ_KEYS.length > 1) {
+        rotateGroqKey()
+        console.log(`   ⏳ Retrying immediately with new key (attempt ${attempt}/${retries})...`)
+        continue
+      }
+
+      // Single key — parse Groq's suggested wait and sleep
       let waitMs
       const minsMatch = errText.match(/(\d+)m([\d.]+)s/)
       const secsMatch = errText.match(/try again in ([\d.]+)s/i)
@@ -176,7 +196,6 @@ async function groq(system, user, model = MODEL_WRITE, retries = 3, maxTokens = 
       } else if (secsMatch) {
         waitMs = parseFloat(secsMatch[1]) * 1000 + 3000
       } else {
-        // Conservative fallback: 90s, 120s, 180s
         waitMs = [90000, 120000, 180000][Math.min(attempt - 1, 2)]
       }
       const waitSec = Math.round(waitMs / 1000)
@@ -192,7 +211,7 @@ async function groq(system, user, model = MODEL_WRITE, retries = 3, maxTokens = 
     return text
   }
 
-  throw new Error('Groq rate limit exceeded after all retries. Try again tomorrow or upgrade to Groq Dev tier.')
+  throw new Error('Groq rate limit exceeded after all retries. Add a second GROQ_API_KEY_2 secret or upgrade to Groq Dev tier.')
 }
 
 // ── STATE ─────────────────────────────────────────────────────
@@ -607,17 +626,42 @@ function scrubPlaceholders(text) {
     .trim()
 }
 
+/**
+ * Cap occurrences of a brand name to `maxKeep` in a Markdown string.
+ * The first `maxKeep` occurrences are left untouched (case-preserved).
+ * Subsequent occurrences are replaced with a rotating set of natural alternatives
+ * so the text still reads fluently without the repeated brand name.
+ */
+function capBrandMentions(text, brand, maxKeep = 8) {
+  const alts = ['the institute', 'our training centre', 'the training team', 'the centre']
+  let seen = 0
+  let altIdx = 0
+  const regex = new RegExp(brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+  return text.replace(regex, (match) => {
+    seen++
+    if (seen <= maxKeep) return match          // keep original capitalisation
+    return alts[altIdx++ % alts.length]        // replace excess with natural alternative
+  })
+}
+
 async function humanizeAndFactCheckPost(topic, draftBody, state) {
   console.log('\nStep 5: Humanizing and fact-checking draft...')
 
   const author = pickAuthor(state)
   const sourceGuide = sourceGuideForTopic(topic)
-  // Pre-scrub any bracket placeholders before the first QA pass
+  // Pre-scrub bracket placeholders before the first QA pass
   let edited = scrubPlaceholders(draftBody)
+
+  // Programmatically reduce excess SpeedUp Infotech mentions before any API call.
+  // The writer often produces 15-25 mentions; we cap at 8 using string replacement
+  // so the editor never has to fight the stuffing QA gate.
+  edited = capBrandMentions(edited, 'SpeedUp Infotech', 8)
+
   let issues = []
-  // QA loop: attempt 1 uses the full 70B writer; attempts 2–3 drop to the faster 8B model
-  // so retries don't consume another large 70B token chunk.
-  const editModels = [MODEL_WRITE, MODEL_RESEARCH, MODEL_RESEARCH]
+  // All editorial passes use the 70B model.
+  // The 8B model (llama-3.1-8b-instant) has a hard 6,000 TPM cap which is smaller
+  // than a full article + prompt (~8,500 tokens), so it cannot be used here.
+  const editModels = [MODEL_WRITE, MODEL_WRITE, MODEL_WRITE]
   for (let attempt = 1; attempt <= 3; attempt++) {
     const sourceText = sourceGuide.map(source =>
       `- ${source.name}: ${source.url}\n  Use when: ${source.useWhen}\n  Facts: ${source.facts.join(' ')}`
@@ -817,6 +861,9 @@ async function main() {
   if (!process.env.GROQ_API_KEY) {
     console.error('\n✗ GROQ_API_KEY not set in GitHub Secrets')
     process.exit(1)
+  }
+  if (GROQ_KEYS.length > 1) {
+    console.log(`   ✓ ${GROQ_KEYS.length} Groq API keys loaded — key rotation enabled`)
   }
 
   const state = loadState()
