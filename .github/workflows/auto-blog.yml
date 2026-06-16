@@ -90,11 +90,20 @@ jobs:
             echo "No new content to commit"
           else
             git commit -m "Auto-publish blog [$(date +'%Y-%m-%d')]"
-            # Pull any commits that landed on remote while the workflow was running,
-            # then replay our blog commit on top — prevents non-fast-forward rejection.
-            git pull --rebase origin master
-            git push origin master
-            echo "PUSHED=true" >> $GITHUB_ENV
+
+            # Retry push up to 3 times, rebasing on top of any remote commits
+            # that arrived while the workflow was running (prevents non-fast-forward).
+            for i in 1 2 3; do
+              echo "Push attempt $i/3..."
+              git fetch origin master
+              git rebase origin/master
+              if git push origin master; then
+                echo "PUSHED=true" >> $GITHUB_ENV
+                break
+              fi
+              echo "Push attempt $i failed, retrying..."
+              sleep 5
+            done
           fi
 
       - name: Send email notification
