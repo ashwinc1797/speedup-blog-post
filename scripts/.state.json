@@ -26,7 +26,8 @@
     "demystifying-ai-models-2026",
     "revolutionizing-industries-with-ai",
     "impact-of-ai-on-web-development-2026",
-    "ai-for-enhanced-customer-experience-2026"
+    "ai-for-enhanced-customer-experience-2026",
+    "ai-and-ml-in-cybersecurity-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -53,7 +54,8 @@
     "AI models 2026",
     "AI in industries",
     "AI web development",
-    "AI customer experience"
+    "AI customer experience",
+    "AI cybersecurity"
   ],
   "publishedPosts": [
     {
@@ -220,8 +222,17 @@
       "publishedAt": "2026-06-17T08:15:55.594Z",
       "words": 1699,
       "qaPassed": true
+    },
+    {
+      "slug": "ai-and-ml-in-cybersecurity-2026",
+      "title": "AI and ML in Cybersecurity 2026",
+      "category": "trending-ai",
+      "keyword": "AI cybersecurity",
+      "publishedAt": "2026-06-17T11:53:03.450Z",
+      "words": 1735,
+      "qaPassed": true
     }
   ],
-  "total": 27,
-  "lastRun": "2026-06-17T08:15:55.594Z"
+  "total": 28,
+  "lastRun": "2026-06-17T11:53:03.450Z"
 }
