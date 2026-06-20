@@ -338,79 +338,57 @@ const UNSPLASH_HERO_FALLBACKS = {
 
 async function getImages(topic, state) {
   console.log('\n📸 Step 3: Fetching topic-matched images from local pre-generated pool...')
-  const imgDir = path.join(ROOT, 'public', 'images')
-  if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true })
 
-  const categoryDir = path.join(imgDir, 'pre-generated', topic.category)
-  let availableImages = []
+  const pregenBase = path.join(ROOT, 'public', 'images', 'pre-generated')
+  const categoryDir = path.join(pregenBase, topic.category)
+  const techDir     = path.join(pregenBase, 'technical')
 
+  // Resolve which directory to use
+  let imgDir = null
   if (fs.existsSync(categoryDir)) {
-    availableImages = fs.readdirSync(categoryDir)
-      .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
-      .map(f => path.join(categoryDir, f))
+    const files = fs.readdirSync(categoryDir).filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
+    if (files.length > 0) imgDir = { dir: categoryDir, cat: topic.category, files }
   }
-
-  // If no images in category, fallback to technical category
-  if (availableImages.length === 0) {
-    const techDir = path.join(imgDir, 'pre-generated', 'technical')
-    if (fs.existsSync(techDir)) {
-      availableImages = fs.readdirSync(techDir)
-        .filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
-        .map(f => path.join(techDir, f))
+  if (!imgDir && fs.existsSync(techDir)) {
+    const files = fs.readdirSync(techDir).filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f))
+    if (files.length > 0) {
+      console.log(`   ⚠️  No images for category "${topic.category}" — using technical fallback`)
+      imgDir = { dir: techDir, cat: 'technical', files }
     }
   }
 
-  const resultImages = []
-  const needed = 4 // 1 hero + 3 body
-
-  // Shuffle available images using Fisher-Yates
-  const shuffle = (array) => {
-    let currentIndex = array.length, randomIndex;
-    while (currentIndex > 0) {
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  if (imgDir) {
+    // Shuffle and pick 4, referencing them directly (no file copy needed)
+    const shuffle = arr => {
+      const a = [...arr]
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]]
+      }
+      return a
     }
-    return array;
-  }
+    const picked = shuffle(imgDir.files).slice(0, 4)
+    // Wrap around if fewer than 4 images available
+    while (picked.length < 4) picked.push(picked[picked.length - 1])
 
-  if (availableImages.length > 0) {
-    // Pick 4 unique images, if less than 4, it will wrap around
-    const shuffledPool = shuffle([...availableImages])
-    for (let i = 0; i < needed; i++) {
-      const sourceFile = shuffledPool[i % shuffledPool.length]
-      const suffix = i === 0 ? '' : `-body${i}`
-      const filename = `${topic.slug}${suffix}${path.extname(sourceFile)}`
-      const targetFile = path.join(imgDir, filename)
-      
-      // Copy to public/images/
-      fs.copyFileSync(sourceFile, targetFile)
-      
-      resultImages.push({
-        url: `/images/${filename}`,
-        heroUrl: `/images/${filename}`,
-        alt: `${topic.title} — SpeedUp Infotech Pune`,
-        credit: 'SpeedUp Infotech'
-      })
-    }
-    console.log(`   ✓ Selected ${needed} images from pre-generated pool`)
-  } else {
-    // Ultimate Fallback if user hasn't added any images to folders yet
-    console.log(`   ⚠️  No pre-generated images found! Using remote fallback URLs.`)
-    const heroRemote = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
-    resultImages.push({ url: heroRemote, heroUrl: heroRemote, alt: topic.title, credit: 'Unsplash' })
-    
-    for (let i = 1; i < needed; i++) {
-      const bodyRemote = FALLBACK_POOL[(state.total + i) % FALLBACK_POOL.length]
-      resultImages.push({ url: bodyRemote, heroUrl: bodyRemote, alt: topic.title, credit: 'Unsplash' })
+    const toUrl = filename => `/images/pre-generated/${imgDir.cat}/${filename}`
+
+    console.log(`   ✓ Selected 4 images from pre-generated pool`)
+    return {
+      hero: { url: toUrl(picked[0]), heroUrl: toUrl(picked[0]), alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'SpeedUp Infotech' },
+      body: picked.slice(1).map(f => ({ url: toUrl(f), heroUrl: toUrl(f), alt: `${topic.title} — SpeedUp Infotech Pune`, credit: 'SpeedUp Infotech' })),
     }
   }
 
-  return { 
-    hero: resultImages[0], 
-    body: [resultImages[1], resultImages[2], resultImages[3]] 
+  // Ultimate fallback — no pre-generated images at all
+  console.log(`   ⚠️  No pre-generated images found! Using remote Unsplash fallback.`)
+  const heroUrl = UNSPLASH_HERO_FALLBACKS[topic.category] || UNSPLASH_HERO_FALLBACKS['technical']
+  return {
+    hero: { url: heroUrl, heroUrl, alt: topic.title, credit: 'Unsplash' },
+    body: FALLBACK_POOL.slice(0, 3).map(u => ({ url: u, heroUrl: u, alt: topic.title, credit: 'Unsplash' })),
   }
 }
+
 
 // ── STEP 4: WRITE BLOG POST (2 calls = ~2000 words) ──────────
 async function writePost(topic, images, state) {
