@@ -10,7 +10,13 @@
     "blog:generate": "node scripts/automate.js",
     "blog:sitemap": "node scripts/sync-sitemap.js",
     "blog:fix-images": "node scripts/fix-images.js",
-    "blog:test": "node scripts/test-run.js"
+    "blog:test": "node scripts/test-run.js",
+    "blog:test-local": "node scripts/test-local.js",
+    "blog:test-local:step1": "node scripts/test-local.js --step 1",
+    "blog:test-local:step3": "node scripts/test-local.js --step 3",
+    "blog:test-local:step5": "node scripts/test-local.js --step 5",
+    "blog:test-local:qa": "node scripts/test-local.js --qa",
+    "blog:test-local:full": "node scripts/test-local.js --full"
   },
   "dependencies": {
     "next": "14.2.5",
