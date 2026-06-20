@@ -28,7 +28,8 @@
     "impact-of-ai-on-web-development-2026",
     "ai-for-enhanced-customer-experience-2026",
     "ai-and-ml-in-cybersecurity-2026",
-    "leveraging-ai-for-enhanced-customer-engagement-2026"
+    "leveraging-ai-for-enhanced-customer-engagement-2026",
+    "exploring-ai-ml-applications-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -57,7 +58,8 @@
     "AI web development",
     "AI customer experience",
     "AI cybersecurity",
-    "AI customer service"
+    "AI customer service",
+    "AI ML applications"
   ],
   "publishedPosts": [
     {
@@ -242,8 +244,17 @@
       "publishedAt": "2026-06-18T05:16:57.278Z",
       "words": 1526,
       "qaPassed": true
+    },
+    {
+      "slug": "exploring-ai-ml-applications-2026",
+      "title": "Exploring AI ML Applications in 2026",
+      "category": "trending-ai",
+      "keyword": "AI ML applications",
+      "publishedAt": "2026-06-20T04:51:55.141Z",
+      "words": 1403,
+      "qaPassed": true
     }
   ],
-  "total": 29,
-  "lastRun": "2026-06-18T05:16:57.278Z"
+  "total": 30,
+  "lastRun": "2026-06-20T04:51:55.141Z"
 }
