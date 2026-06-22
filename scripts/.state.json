@@ -29,7 +29,8 @@
     "ai-for-enhanced-customer-experience-2026",
     "ai-and-ml-in-cybersecurity-2026",
     "leveraging-ai-for-enhanced-customer-engagement-2026",
-    "exploring-ai-ml-applications-2026"
+    "exploring-ai-ml-applications-2026",
+    "ai-driven-data-analytics-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -59,7 +60,8 @@
     "AI customer experience",
     "AI cybersecurity",
     "AI customer service",
-    "AI ML applications"
+    "AI ML applications",
+    "AI data analytics"
   ],
   "publishedPosts": [
     {
@@ -253,8 +255,17 @@
       "publishedAt": "2026-06-20T04:51:55.141Z",
       "words": 1403,
       "qaPassed": true
+    },
+    {
+      "slug": "ai-driven-data-analytics-2026",
+      "title": "AI Driven Data Analytics in 2026: Emerging Trends for Developers",
+      "category": "trending-ai",
+      "keyword": "AI data analytics",
+      "publishedAt": "2026-06-22T05:42:17.205Z",
+      "words": 1718,
+      "qaPassed": true
     }
   ],
-  "total": 30,
-  "lastRun": "2026-06-20T04:51:55.141Z"
+  "total": 31,
+  "lastRun": "2026-06-22T05:42:17.205Z"
 }
