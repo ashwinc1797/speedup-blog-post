@@ -30,7 +30,8 @@
     "ai-and-ml-in-cybersecurity-2026",
     "leveraging-ai-for-enhanced-customer-engagement-2026",
     "exploring-ai-ml-applications-2026",
-    "ai-driven-data-analytics-2026"
+    "ai-driven-data-analytics-2026",
+    "unlocking-ai-potential-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -61,7 +62,8 @@
     "AI cybersecurity",
     "AI customer service",
     "AI ML applications",
-    "AI data analytics"
+    "AI data analytics",
+    "AI potential 2026"
   ],
   "publishedPosts": [
     {
@@ -264,8 +266,17 @@
       "publishedAt": "2026-06-22T05:42:17.205Z",
       "words": 1718,
       "qaPassed": true
+    },
+    {
+      "slug": "unlocking-ai-potential-2026",
+      "title": "Unlocking AI Potential in 2026",
+      "category": "trending-ai",
+      "keyword": "AI potential 2026",
+      "publishedAt": "2026-06-23T04:41:02.153Z",
+      "words": 2062,
+      "qaPassed": true
     }
   ],
-  "total": 31,
-  "lastRun": "2026-06-22T05:42:17.205Z"
+  "total": 32,
+  "lastRun": "2026-06-23T04:41:02.153Z"
 }
