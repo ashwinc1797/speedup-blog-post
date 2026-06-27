@@ -32,7 +32,8 @@
     "exploring-ai-ml-applications-2026",
     "ai-driven-data-analytics-2026",
     "unlocking-ai-potential-2026",
-    "ai-ml-predictive-modeling-2026"
+    "ai-ml-predictive-modeling-2026",
+    "ai-ml-job-market-outlook-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -65,7 +66,8 @@
     "AI ML applications",
     "AI data analytics",
     "AI potential 2026",
-    "predictive modeling"
+    "predictive modeling",
+    "AI ML job market"
   ],
   "publishedPosts": [
     {
@@ -286,8 +288,17 @@
       "publishedAt": "2026-06-25T04:45:12.871Z",
       "words": 1584,
       "qaPassed": true
+    },
+    {
+      "slug": "ai-ml-job-market-outlook-2026",
+      "title": "AI ML Job Market Outlook 2026",
+      "category": "trending-ai",
+      "keyword": "AI ML job market",
+      "publishedAt": "2026-06-27T04:34:36.711Z",
+      "words": 1765,
+      "qaPassed": true
     }
   ],
-  "total": 33,
-  "lastRun": "2026-06-25T04:45:12.871Z"
+  "total": 34,
+  "lastRun": "2026-06-27T04:34:36.711Z"
 }
