@@ -34,7 +34,8 @@
     "unlocking-ai-potential-2026",
     "ai-ml-predictive-modeling-2026",
     "ai-ml-job-market-outlook-2026",
-    "ai-driven-digital-transformation-2026"
+    "ai-driven-digital-transformation-2026",
+    "revolutionizing-healthcare-with-ai"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -69,7 +70,8 @@
     "AI potential 2026",
     "predictive modeling",
     "AI ML job market",
-    "AI digital transformation"
+    "AI digital transformation",
+    "AI in healthcare"
   ],
   "publishedPosts": [
     {
@@ -308,8 +310,17 @@
       "publishedAt": "2026-06-29T05:12:11.274Z",
       "words": 1448,
       "qaPassed": true
+    },
+    {
+      "slug": "revolutionizing-healthcare-with-ai",
+      "title": "Revolutionizing Healthcare with AI in 2026",
+      "category": "trending-ai",
+      "keyword": "AI in healthcare",
+      "publishedAt": "2026-06-30T04:44:39.973Z",
+      "words": 1535,
+      "qaPassed": true
     }
   ],
-  "total": 35,
-  "lastRun": "2026-06-29T05:12:11.274Z"
+  "total": 36,
+  "lastRun": "2026-06-30T04:44:39.973Z"
 }
