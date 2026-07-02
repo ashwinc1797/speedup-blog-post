@@ -35,7 +35,8 @@
     "ai-ml-predictive-modeling-2026",
     "ai-ml-job-market-outlook-2026",
     "ai-driven-digital-transformation-2026",
-    "revolutionizing-healthcare-with-ai"
+    "revolutionizing-healthcare-with-ai",
+    "ai-ml-for-cloud-computing-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -71,7 +72,8 @@
     "predictive modeling",
     "AI ML job market",
     "AI digital transformation",
-    "AI in healthcare"
+    "AI in healthcare",
+    "AI ML cloud"
   ],
   "publishedPosts": [
     {
@@ -319,8 +321,17 @@
       "publishedAt": "2026-06-30T04:44:39.973Z",
       "words": 1535,
       "qaPassed": true
+    },
+    {
+      "slug": "ai-ml-for-cloud-computing-2026",
+      "title": "AI ML for Cloud Computing in 2026",
+      "category": "trending-ai",
+      "keyword": "AI ML cloud",
+      "publishedAt": "2026-07-02T04:40:10.427Z",
+      "words": 1459,
+      "qaPassed": true
     }
   ],
-  "total": 36,
-  "lastRun": "2026-06-30T04:44:39.973Z"
+  "total": 37,
+  "lastRun": "2026-07-02T04:40:10.427Z"
 }
