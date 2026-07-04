@@ -36,7 +36,8 @@
     "ai-ml-job-market-outlook-2026",
     "ai-driven-digital-transformation-2026",
     "revolutionizing-healthcare-with-ai",
-    "ai-ml-for-cloud-computing-2026"
+    "ai-ml-for-cloud-computing-2026",
+    "demystifying-ai-ml-complexity-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -73,7 +74,8 @@
     "AI ML job market",
     "AI digital transformation",
     "AI in healthcare",
-    "AI ML cloud"
+    "AI ML cloud",
+    "AI ML complexity"
   ],
   "publishedPosts": [
     {
@@ -330,8 +332,17 @@
       "publishedAt": "2026-07-02T04:40:10.427Z",
       "words": 1459,
       "qaPassed": true
+    },
+    {
+      "slug": "demystifying-ai-ml-complexity-2026",
+      "title": "Demystifying AI ML Complexity in 2026",
+      "category": "trending-ai",
+      "keyword": "AI ML complexity",
+      "publishedAt": "2026-07-04T04:11:39.008Z",
+      "words": 1448,
+      "qaPassed": true
     }
   ],
-  "total": 37,
-  "lastRun": "2026-07-02T04:40:10.427Z"
+  "total": 38,
+  "lastRun": "2026-07-04T04:11:39.008Z"
 }
