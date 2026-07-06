@@ -37,7 +37,8 @@
     "ai-driven-digital-transformation-2026",
     "revolutionizing-healthcare-with-ai",
     "ai-ml-for-cloud-computing-2026",
-    "demystifying-ai-ml-complexity-2026"
+    "demystifying-ai-ml-complexity-2026",
+    "emerging-ai-technologies-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -75,7 +76,8 @@
     "AI digital transformation",
     "AI in healthcare",
     "AI ML cloud",
-    "AI ML complexity"
+    "AI ML complexity",
+    "AI technologies"
   ],
   "publishedPosts": [
     {
@@ -341,8 +343,17 @@
       "publishedAt": "2026-07-04T04:11:39.008Z",
       "words": 1448,
       "qaPassed": true
+    },
+    {
+      "slug": "emerging-ai-technologies-2026",
+      "title": "Emerging AI Technologies in 2026",
+      "category": "trending-ai",
+      "keyword": "AI technologies",
+      "publishedAt": "2026-07-06T04:51:49.357Z",
+      "words": 1658,
+      "qaPassed": true
     }
   ],
-  "total": 38,
-  "lastRun": "2026-07-04T04:11:39.008Z"
+  "total": 39,
+  "lastRun": "2026-07-06T04:51:49.357Z"
 }
