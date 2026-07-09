@@ -39,7 +39,8 @@
     "ai-ml-for-cloud-computing-2026",
     "demystifying-ai-ml-complexity-2026",
     "emerging-ai-technologies-2026",
-    "exploring-ai-innovations-2026"
+    "exploring-ai-innovations-2026",
+    "unlocking-ai-ml-potential-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -79,7 +80,8 @@
     "AI ML cloud",
     "AI ML complexity",
     "AI technologies",
-    "AI innovations"
+    "AI innovations",
+    "AI ML potential"
   ],
   "publishedPosts": [
     {
@@ -363,8 +365,17 @@
       "publishedAt": "2026-07-07T04:33:04.141Z",
       "words": 1818,
       "qaPassed": true
+    },
+    {
+      "slug": "unlocking-ai-ml-potential-2026",
+      "title": "Unlocking AI ML Potential in 2026",
+      "category": "trending-ai",
+      "keyword": "AI ML potential",
+      "publishedAt": "2026-07-09T04:30:37.368Z",
+      "words": 1902,
+      "qaPassed": true
     }
   ],
-  "total": 40,
-  "lastRun": "2026-07-07T04:33:04.141Z"
+  "total": 41,
+  "lastRun": "2026-07-09T04:30:37.368Z"
 }
