@@ -40,7 +40,8 @@
     "demystifying-ai-ml-complexity-2026",
     "emerging-ai-technologies-2026",
     "exploring-ai-innovations-2026",
-    "unlocking-ai-ml-potential-2026"
+    "unlocking-ai-ml-potential-2026",
+    "top-ai-trends-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -81,7 +82,8 @@
     "AI ML complexity",
     "AI technologies",
     "AI innovations",
-    "AI ML potential"
+    "AI ML potential",
+    "AI trends"
   ],
   "publishedPosts": [
     {
@@ -374,8 +376,17 @@
       "publishedAt": "2026-07-09T04:30:37.368Z",
       "words": 1902,
       "qaPassed": true
+    },
+    {
+      "slug": "top-ai-trends-2026",
+      "title": "Top AI Trends to Watch in 2026",
+      "category": "trending-ai",
+      "keyword": "AI trends",
+      "publishedAt": "2026-07-11T03:52:21.305Z",
+      "words": 1660,
+      "qaPassed": true
     }
   ],
-  "total": 41,
-  "lastRun": "2026-07-09T04:30:37.368Z"
+  "total": 42,
+  "lastRun": "2026-07-11T03:52:21.305Z"
 }
