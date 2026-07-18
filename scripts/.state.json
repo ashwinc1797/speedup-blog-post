@@ -44,7 +44,8 @@
     "top-ai-trends-2026",
     "advancements-in-ai-and-machine-learning-2026",
     "trending-ai-applications-2026",
-    "revolutionizing-business-with-ai"
+    "revolutionizing-business-with-ai",
+    "revolutionizing-it-with-ai"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -89,7 +90,8 @@
     "AI trends",
     "AI and Machine Learning",
     "AI applications 2026",
-    "AI business"
+    "AI business",
+    "AI in IT"
   ],
   "publishedPosts": [
     {
@@ -418,8 +420,17 @@
       "publishedAt": "2026-07-16T03:47:35.949Z",
       "words": 1530,
       "qaPassed": true
+    },
+    {
+      "slug": "revolutionizing-it-with-ai",
+      "title": "Revolutionizing IT with AI in 2026",
+      "category": "trending-ai",
+      "keyword": "AI in IT",
+      "publishedAt": "2026-07-18T03:42:23.362Z",
+      "words": 1710,
+      "qaPassed": true
     }
   ],
-  "total": 45,
-  "lastRun": "2026-07-16T03:47:35.949Z"
+  "total": 46,
+  "lastRun": "2026-07-18T03:42:23.362Z"
 }
