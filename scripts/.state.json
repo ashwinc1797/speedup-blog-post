@@ -45,7 +45,8 @@
     "advancements-in-ai-and-machine-learning-2026",
     "trending-ai-applications-2026",
     "revolutionizing-business-with-ai",
-    "revolutionizing-it-with-ai"
+    "revolutionizing-it-with-ai",
+    "ai-ml-revolutionizing-education-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -91,7 +92,8 @@
     "AI and Machine Learning",
     "AI applications 2026",
     "AI business",
-    "AI in IT"
+    "AI in IT",
+    "AI in education"
   ],
   "publishedPosts": [
     {
@@ -429,8 +431,17 @@
       "publishedAt": "2026-07-18T03:42:23.362Z",
       "words": 1710,
       "qaPassed": true
+    },
+    {
+      "slug": "ai-ml-revolutionizing-education-2026",
+      "title": "AI ML Revolutionizing Education in 2026",
+      "category": "trending-ai",
+      "keyword": "AI in education",
+      "publishedAt": "2026-07-20T04:13:39.665Z",
+      "words": 2060,
+      "qaPassed": true
     }
   ],
-  "total": 46,
-  "lastRun": "2026-07-18T03:42:23.362Z"
+  "total": 47,
+  "lastRun": "2026-07-20T04:13:39.665Z"
 }
