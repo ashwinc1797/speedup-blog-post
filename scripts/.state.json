@@ -49,7 +49,8 @@
     "ai-ml-revolutionizing-education-2026",
     "leveraging-ai-for-enhanced-user-experience-2026",
     "ai-ml-driving-business-success-2026",
-    "future-of-ai-in-2026"
+    "future-of-ai-in-2026",
+    "ai-in-cybersecurity-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -99,7 +100,8 @@
     "AI in education",
     "AI user experience",
     "AI ML business success",
-    "AI emerging technologies"
+    "AI emerging technologies",
+    "AI cybersecurity"
   ],
   "publishedPosts": [
     {
@@ -473,8 +475,17 @@
       "publishedAt": "2026-07-25T03:48:37.984Z",
       "words": 1804,
       "qaPassed": true
+    },
+    {
+      "slug": "ai-in-cybersecurity-2026",
+      "title": "AI in Cybersecurity 2026: Threats and Opportunities",
+      "category": "trending-ai",
+      "keyword": "AI cybersecurity",
+      "publishedAt": "2026-07-27T04:13:32.037Z",
+      "words": 1547,
+      "qaPassed": true
     }
   ],
-  "total": 50,
-  "lastRun": "2026-07-25T03:48:37.984Z"
+  "total": 51,
+  "lastRun": "2026-07-27T04:13:32.037Z"
 }
