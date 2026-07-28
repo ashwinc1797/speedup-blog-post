@@ -50,7 +50,8 @@
     "leveraging-ai-for-enhanced-user-experience-2026",
     "ai-ml-driving-business-success-2026",
     "future-of-ai-in-2026",
-    "ai-in-cybersecurity-2026"
+    "ai-in-cybersecurity-2026",
+    "trending-ai-solutions-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -101,7 +102,8 @@
     "AI user experience",
     "AI ML business success",
     "AI emerging technologies",
-    "AI cybersecurity"
+    "AI cybersecurity",
+    "trending ai"
   ],
   "publishedPosts": [
     {
@@ -484,8 +486,17 @@
       "publishedAt": "2026-07-27T04:13:32.037Z",
       "words": 1547,
       "qaPassed": true
+    },
+    {
+      "slug": "trending-ai-solutions-2026",
+      "title": "Trending AI Solutions in 2026",
+      "category": "trending-ai",
+      "keyword": "trending ai",
+      "publishedAt": "2026-07-28T03:46:47.460Z",
+      "words": 1952,
+      "qaPassed": true
     }
   ],
-  "total": 51,
-  "lastRun": "2026-07-27T04:13:32.037Z"
+  "total": 52,
+  "lastRun": "2026-07-28T03:46:47.460Z"
 }
