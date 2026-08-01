@@ -52,7 +52,8 @@
     "future-of-ai-in-2026",
     "ai-in-cybersecurity-2026",
     "trending-ai-solutions-2026",
-    "top-ai-developments-2026"
+    "top-ai-developments-2026",
+    "explainable-ai-in-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -105,7 +106,8 @@
     "AI emerging technologies",
     "AI cybersecurity",
     "trending ai",
-    "AI developments 2026"
+    "AI developments 2026",
+    "Explainable AI"
   ],
   "publishedPosts": [
     {
@@ -506,8 +508,17 @@
       "publishedAt": "2026-07-30T03:42:02.742Z",
       "words": 1432,
       "qaPassed": true
+    },
+    {
+      "slug": "explainable-ai-in-2026",
+      "title": "Breaking Barriers with Explainable AI in 2026",
+      "category": "trending-ai",
+      "keyword": "Explainable AI",
+      "publishedAt": "2026-08-01T04:00:53.554Z",
+      "words": 1884,
+      "qaPassed": true
     }
   ],
-  "total": 53,
-  "lastRun": "2026-07-30T03:42:02.742Z"
+  "total": 54,
+  "lastRun": "2026-08-01T04:00:53.554Z"
 }
