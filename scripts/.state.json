@@ -56,7 +56,8 @@
     "explainable-ai-in-2026",
     "unlocking-human-potential-with-ai",
     "impact-of-ai-on-data-analytics",
-    "revolutionizing-industries-with-ai-2026"
+    "revolutionizing-industries-with-ai-2026",
+    "ai-and-robotics-in-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -113,7 +114,8 @@
     "Explainable AI",
     "AI human potential",
     "AI data analytics",
-    "AI in industries"
+    "AI in industries",
+    "AI robotics"
   ],
   "publishedPosts": [
     {
@@ -550,8 +552,17 @@
       "publishedAt": "2026-08-06T03:49:50.386Z",
       "words": 1528,
       "qaPassed": true
+    },
+    {
+      "slug": "ai-and-robotics-in-2026",
+      "title": "AI and Robotics in 2026: Collaborative Future",
+      "category": "trending-ai",
+      "keyword": "AI robotics",
+      "publishedAt": "2026-08-08T02:29:13.814Z",
+      "words": 1679,
+      "qaPassed": true
     }
   ],
-  "total": 57,
-  "lastRun": "2026-08-06T03:49:50.386Z"
+  "total": 58,
+  "lastRun": "2026-08-08T02:29:13.814Z"
 }
