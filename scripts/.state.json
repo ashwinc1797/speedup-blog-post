@@ -57,7 +57,8 @@
     "unlocking-human-potential-with-ai",
     "impact-of-ai-on-data-analytics",
     "revolutionizing-industries-with-ai-2026",
-    "ai-and-robotics-in-2026"
+    "ai-and-robotics-in-2026",
+    "future-of-intelligent-systems-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -115,7 +116,8 @@
     "AI human potential",
     "AI data analytics",
     "AI in industries",
-    "AI robotics"
+    "AI robotics",
+    "intelligent systems"
   ],
   "publishedPosts": [
     {
@@ -561,8 +563,17 @@
       "publishedAt": "2026-08-08T02:29:13.814Z",
       "words": 1679,
       "qaPassed": true
+    },
+    {
+      "slug": "future-of-intelligent-systems-2026",
+      "title": "Future of Intelligent Systems in 2026",
+      "category": "trending-ai",
+      "keyword": "intelligent systems",
+      "publishedAt": "2026-08-10T02:41:47.583Z",
+      "words": 1699,
+      "qaPassed": true
     }
   ],
-  "total": 58,
-  "lastRun": "2026-08-08T02:29:13.814Z"
+  "total": 59,
+  "lastRun": "2026-08-10T02:41:47.583Z"
 }
