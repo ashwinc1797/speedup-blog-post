@@ -58,7 +58,8 @@
     "impact-of-ai-on-data-analytics",
     "revolutionizing-industries-with-ai-2026",
     "ai-and-robotics-in-2026",
-    "future-of-intelligent-systems-2026"
+    "future-of-intelligent-systems-2026",
+    "ai-assisted-decision-making-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -117,7 +118,8 @@
     "AI data analytics",
     "AI in industries",
     "AI robotics",
-    "intelligent systems"
+    "intelligent systems",
+    "AI decision making"
   ],
   "publishedPosts": [
     {
@@ -572,8 +574,17 @@
       "publishedAt": "2026-08-10T02:41:47.583Z",
       "words": 1699,
       "qaPassed": true
+    },
+    {
+      "slug": "ai-assisted-decision-making-2026",
+      "title": "AI Assisted Decision Making in 2026",
+      "category": "trending-ai",
+      "keyword": "AI decision making",
+      "publishedAt": "2026-08-11T02:35:40.267Z",
+      "words": 1771,
+      "qaPassed": true
     }
   ],
-  "total": 59,
-  "lastRun": "2026-08-10T02:41:47.583Z"
+  "total": 60,
+  "lastRun": "2026-08-11T02:35:40.267Z"
 }
