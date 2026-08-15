@@ -60,7 +60,8 @@
     "ai-and-robotics-in-2026",
     "future-of-intelligent-systems-2026",
     "ai-assisted-decision-making-2026",
-    "advancements-in-natural-language-processing-2026"
+    "advancements-in-natural-language-processing-2026",
+    "rise-of-edge-ai-2026"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -121,7 +122,8 @@
     "AI robotics",
     "intelligent systems",
     "AI decision making",
-    "NLP 2026"
+    "NLP 2026",
+    "Edge AI"
   ],
   "publishedPosts": [
     {
@@ -594,8 +596,17 @@
       "publishedAt": "2026-08-13T03:08:15.315Z",
       "words": 1487,
       "qaPassed": true
+    },
+    {
+      "slug": "rise-of-edge-ai-2026",
+      "title": "Rise of Edge AI in 2026",
+      "category": "trending-ai",
+      "keyword": "Edge AI",
+      "publishedAt": "2026-08-15T01:57:33.522Z",
+      "words": 1470,
+      "qaPassed": true
     }
   ],
-  "total": 61,
-  "lastRun": "2026-08-13T03:08:15.316Z"
+  "total": 62,
+  "lastRun": "2026-08-15T01:57:33.522Z"
 }
