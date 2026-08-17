@@ -61,7 +61,8 @@
     "future-of-intelligent-systems-2026",
     "ai-assisted-decision-making-2026",
     "advancements-in-natural-language-processing-2026",
-    "rise-of-edge-ai-2026"
+    "rise-of-edge-ai-2026",
+    "transforming-healthcare-with-ai"
   ],
   "usedKeywords": [
     "IT job in Pune after engineering",
@@ -123,7 +124,8 @@
     "intelligent systems",
     "AI decision making",
     "NLP 2026",
-    "Edge AI"
+    "Edge AI",
+    "AI in healthcare"
   ],
   "publishedPosts": [
     {
@@ -605,8 +607,17 @@
       "publishedAt": "2026-08-15T01:57:33.522Z",
       "words": 1470,
       "qaPassed": true
+    },
+    {
+      "slug": "transforming-healthcare-with-ai",
+      "title": "Transforming Healthcare with AI in 2026",
+      "category": "trending-ai",
+      "keyword": "AI in healthcare",
+      "publishedAt": "2026-08-17T02:02:53.102Z",
+      "words": 1777,
+      "qaPassed": true
     }
   ],
-  "total": 62,
-  "lastRun": "2026-08-15T01:57:33.522Z"
+  "total": 63,
+  "lastRun": "2026-08-17T02:02:53.102Z"
 }
